@@ -11,7 +11,7 @@ def initialize_database(db_path):
     connection.close()
 
 def start_working(project_name):
-    db_path = f'c:/python/{project_name}_time_tracker.db'
+    db_path = f'.\{project_name}_time_tracker.db'
     initialize_database(db_path)
     connection = sqlite3.connect(db_path)
     cursor = connection.cursor()
@@ -22,7 +22,8 @@ def start_working(project_name):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Please provide a project name.")
+        proj_name = input("Please provide a project name: ")
+        start_working("asdk")
     else:
         project_name = sys.argv[1]
-        start_working(project_name)
+        start_working("asdk")

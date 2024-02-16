@@ -2,7 +2,7 @@ import sqlite3
 import sys
 
 def stop_working(project_name):
-    db_path = f'c:/python/{project_name}_time_tracker.db'
+    db_path = f'asdk_time_tracker.db'
     activities = input("What did you do in this session? ")
     connection = sqlite3.connect(db_path)
     cursor = connection.cursor()
@@ -15,7 +15,8 @@ def stop_working(project_name):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Please provide a project name.")
+        proj_name= input("Please provide a project name.")
+        stop_working(proj_name)
     else:
         project_name = sys.argv[1]
         stop_working(project_name)
