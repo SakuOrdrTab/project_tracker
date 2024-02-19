@@ -1,6 +1,6 @@
-## A Small project time tracker
+# A Small project time tracker
 
-# Install
+## Install
 This is a python script.
 
 To install, clone it to a suitable folder for python projects, let's say C:\PYTHON\project_tracker
@@ -19,7 +19,7 @@ Then you can run it with your python interpreter
 >python proj_ttracker.py
 >
 
-# Usage
+## Usage
 
 This script is designed to be used from a command prompt:
 
