@@ -73,21 +73,22 @@ if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(description="Track project's working hours.")
     arg_parser.add_argument('projectname', help="The name of the project is needed as the first argument.")
     arg_parser.add_argument('-start', action='store_true', help='Start a working period')
-    arg_parser.add_argument('-stop', nargs='*', help='Stop a working period and provide a description (optional)')
+    arg_parser.add_argument('-stop', nargs='*', default=[], help='Stop a working period and provide a description (optional)')
     arg_parser.add_argument('-print', action='store_true', help='Write project time usage to .csv')
 
     args = arg_parser.parse_args()
 
-    if args.stop:
-        if not args.stop:  # no description provided
+    if args.stop is not None:  # This condition is true if -stop was used, regardless of additional arguments
+        # Check if description is empty
+        if not args.stop:
             description = input("What did you do in this session? ")
         else:
             description = " ".join(args.stop)
         Storage(args.projectname).stop_working(description)
-    else:  
+    else:
         if args.start:
             Storage(args.projectname).start_working()
         elif args.print:
             Storage(args.projectname).write_project_to_csv()
-        else:  
-            arg_parser.print_help() # no valid args, print help
+        else:
+            arg_parser.print_help()  # No valid arguments, print help
