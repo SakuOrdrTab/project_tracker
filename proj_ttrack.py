@@ -36,17 +36,18 @@ def stop_working(project_name, activities):
 def write_project_to_csv(project_name : str) -> None:
     db_path = f'.\{project_name}_time_tracker.db'
     db = sqlite3.connect(db_path)
+
     # Query to list all tables
     query = "SELECT * FROM project_time_tracking;"
-    res = db.execute(query).fetchall()
-
-    print(res)
     df = pd.read_sql_query(query, db)
-    if df.empty:
-        print("No tables found in the database.")
-    else:
-        print("Tables in the database:")
-        print(df)
+    
+    # Convert string timestamps to datetime objects
+    df['start_time'] = pd.to_datetime(df['start_time'])
+    df['end_time'] = pd.to_datetime(df['end_time'])
+
+    df['duration'] = df['end_time'] - df['start_time']
+    print(df)
+
 
 
 if __name__ == "__main__":
