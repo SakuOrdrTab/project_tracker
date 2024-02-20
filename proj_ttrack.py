@@ -27,27 +27,43 @@ class Storage():
         try:
             connection = sqlite3.connect(self._db_path)
             cursor = connection.cursor()
+            # Check if there is already an ongoing session
+            cursor.execute("SELECT id FROM project_time_tracking WHERE end_time IS NULL")
+            if cursor.fetchone():
+                print("There is already an ongoing session. Please stop the current session before starting a new one.")
+                return
+            
+            # If no ongoing session, start a new one
             cursor.execute("INSERT INTO project_time_tracking (start_time) VALUES (datetime('now'))")
             connection.commit()
-            connection.close()
         except Exception as e:
             print(f"Could not insert into databse {self._db_path} ({e}), exiting...")
             sys.exit(1)
         print(f"Started working on the project: {self.project_name}.")
 
+
     def stop_working(self, activities):
         try: 
             connection = sqlite3.connect(self._db_path)
             cursor = connection.cursor()
+
+            # Check if there is an ongoing session
+            cursor.execute("SELECT id FROM project_time_tracking WHERE end_time IS NULL")
+            ongoing_session = cursor.fetchone()
+            if ongoing_session is None:
+                print("No ongoing session to stop. Please start a session first.")
+                return
+            
+            # If there is an ongoing session, update it
             cursor.execute('''UPDATE project_time_tracking 
                             SET end_time = datetime('now'), activities = ? 
-                            WHERE id = (SELECT MAX(id) FROM project_time_tracking)''', (activities,))
+                            WHERE id = ?''', (activities, ongoing_session[0],))
             connection.commit()
-            connection.close()
         except Exception as e:
             print(f"Could not update into databse {self._db_path} ({e}), exiting...")
             sys.exit(1)
         print(f"Stopped working on the project: {self.project_name} and recorded activities.")
+
 
     def write_project_to_csv(self) -> None:
         db_path = f'.\{self.project_name}_time_tracker.db'
@@ -67,6 +83,7 @@ class Storage():
 
         df['duration'] = df['end_time'] - df['start_time']
         print(df)
+        df.to_csv(f"{self.project_name}_time_tracker.csv")
 
 
 if __name__ == "__main__":
