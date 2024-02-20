@@ -28,6 +28,12 @@ This script is designed to be used from a command prompt:
 
 <I>'<project_name> -start'</I> Sets a starting time for a project work session. Run this when you start coding<BR>
 <I>'<project_name> -stop <optional_text>'</I>  Sets the closing time, use when you stop coding. if optional text is empty, it asks for what you did durring the session<BR>
-<I>'-print'</I> Prints your sessions<BR>
+<I>'-print'</I> Prints your sessions to a `.csv`-file<BR>
 
 I find it easiest, that if I start a project, I create two windows thumbnails with different args; one for starting to code the project, another to quit a session. When I work a session with the project, I run the first thumbnail, then when I finish, I run the latter.
+
+## Additional info
+
+The program uses SQLite for managing data.
+
+Currently, the program logic prevents sequential "starts" and "stops". This means, that if you forget to close a session, it becomes impossible to alter the closing time for example the next day you happen to notice it. Also, if you "add just a few lines of code more", you can't put another stop mark to the session. However, if you want program to wrok differently in these regards, feel free just altering a bit the `.start_working()` and `.stop_working()` methods, they can handle nulls etc quite easily without overt recoding.
