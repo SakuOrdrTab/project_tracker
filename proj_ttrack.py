@@ -14,7 +14,7 @@ class Storage():
             project_name (str): project's name, used also in files relevant to tracker
         """        
         self.project_name = project_name
-        self._db_path = f'.\{project_name}_time_tracker.db'
+        self._db_path = os.path.join('.', f'{project_name}_time_tracker.db')
         # Create a new database if needed
         if not os.path.exists(self._db_path): 
             self.initialize_database()
