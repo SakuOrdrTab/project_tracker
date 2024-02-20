@@ -5,13 +5,23 @@ import pandas as pd
 import argparse
 
 class Storage():
-    def __init__(self, project_name):
+    """Has the functionality and storage means for tracking project's time consumption. Implemented with SQLite
+    """    
+    def __init__(self, project_name : str) -> None:
+        """Constructs a Storage object
+
+        Args:
+            project_name (str): project's name, used also in files relevant to tracker
+        """        
         self.project_name = project_name
         self._db_path = f'.\{project_name}_time_tracker.db'
+        # Create a new database if needed
         if not os.path.exists(self._db_path): 
             self.initialize_database()
     
-    def initialize_database(self):
+    def initialize_database(self) -> None:
+        """Initializes a new Sqlite3 database if no prior exists
+        """        
         try:
             with sqlite3.connect(self._db_path) as db:
                 db.execute('''CREATE TABLE project_time_tracking 
@@ -20,7 +30,9 @@ class Storage():
             print(f"Could not initialize database {self._db_path} ({e}), exiting...")
             sys.exit(1)
 
-    def start_working(self):
+    def start_working(self) -> None:
+        """A Start time is marked in the database
+        """        
         try:
             with sqlite3.connect(self._db_path) as db:
                 # Check if there is already an ongoing session
@@ -35,7 +47,12 @@ class Storage():
             sys.exit(1)
         print(f"Started working on the project: {self.project_name}.")
 
-    def stop_working(self, activities):
+    def stop_working(self, activities : str) -> None:
+        """A Stopping time is marked in the database together with a description of spent time usage.
+
+        Args:
+            activities (str): description of time spent
+        """        
         try:
             with sqlite3.connect(self._db_path) as db:
 
@@ -55,16 +72,16 @@ class Storage():
         print(f"Stopped working on the project: {self.project_name} and recorded activities.")
 
     def write_project_to_csv(self) -> None:
+        """Writes project's time usage in a .csv file
+        """        
         try:
             with sqlite3.connect(self._db_path) as db:
-                # Query to list all tables
                 query = "SELECT * FROM project_time_tracking;"
                 df = pd.read_sql_query(query, db)
         except Exception as e:
             print(f"Could not read from database {self._db_path} ({e}), exiting...")
             sys.exit(1)
         
-        # Convert string timestamps to datetime objects
         df['start_time'] = pd.to_datetime(df['start_time'])
         df['end_time'] = pd.to_datetime(df['end_time'])
 
@@ -83,7 +100,6 @@ if __name__ == "__main__":
 
     args = arg_parser.parse_args()
 
-    # If '-stop' was used, whether or not it has additional arguments
     if args.stop is not None:
         description = " ".join(args.stop) if args.stop else input("What did you do in this session? ")
         Storage(args.projectname).stop_working(description)
