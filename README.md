@@ -31,7 +31,7 @@ This script is designed to be used from a command prompt:
 <I>'-print'</I> Prints your sessions to a `.csv`-file<BR>
 
 I find it easiest, that if I start a project, I create two windows thumbnails with different args; one for starting to code the project, another to quit a session. When I work a session with the project, I run the first thumbnail, then when I finish, I run the latter. An example in windows for a suitable batch file could be like this:
->`start.bat`
+>`start.bat`<BR>
 >cd C:\Users\user\Documents\Python\project_tracker
 >
 >:: activate virtual env, call is necessary because of path env var update
