@@ -32,14 +32,14 @@ This script is designed to be used from a command prompt:
 
 I find it easiest, that if I start a project, I create two windows thumbnails with different args; one for starting to code the project, another to quit a session. When I work a session with the project, I run the first thumbnail, then when I finish, I run the latter. An example in windows for a suitable batch file could be like this:
 >`start.bat`<BR>
->cd C:\Users\user\Documents\Python\project_tracker
->
->:: activate virtual env, call is necessary because of path env var update
->call .\.venv\Scripts\activate
->
->:: run the venv version python.exe
->python.exe .\proj_ttrack.py .\koikka -start
->.\.venv\Scripts\deactivate
+>cd C:\Users\user\Documents\Python\project_tracker<BR>
+><BR>
+>:: activate virtual env, call is necessary because of path env var update<BR>
+>call .\.venv\Scripts\activate<BR>
+><BR>
+>:: run the venv version python.exe<BR>
+>python.exe .\proj_ttrack.py .\koikka -start<BR>
+>.\.venv\Scripts\deactivate<BR>
 
 ## Additional info
 
