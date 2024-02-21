@@ -38,7 +38,7 @@ I find it easiest, that if I start a project, I create two windows thumbnails wi
 >call .\.venv\Scripts\activate<BR>
 ><BR>
 >:: run the venv version python.exe<BR>
->python.exe .\proj_ttrack.py .\koikka -start<BR>
+>python.exe .\proj_ttrack.py .\project_name -start<BR>
 >.\.venv\Scripts\deactivate<BR>
 
 ## Additional info
