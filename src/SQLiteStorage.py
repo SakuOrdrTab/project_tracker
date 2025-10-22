@@ -56,17 +56,23 @@ class SQLiteStorage():
         try:
             with sqlite3.connect(self._db_path) as db:
 
-                # Check if there is an ongoing session
-                ongoing_session = db.execute("SELECT id FROM project_time_tracking WHERE end_time IS NULL AND proj_name = ?",
-                                              (proj_name,)).fetchone()
+                # Check for the ID of the MOST RECENT ongoing session
+                ongoing_session = db.execute("""    
+                    SELECT id FROM project_time_tracking 
+                    WHERE end_time IS NULL AND proj_name = ?
+                    ORDER BY start_time DESC LIMIT 1
+                    """, (proj_name,)).fetchone()
+                    
                 if ongoing_session is None:
                     print("No ongoing session to stop. Please start a session first.")
                     return
                 
-                # If there is an ongoing session, update it
+                session_id = ongoing_session[0]
+                
+                # Update only the session with that specific ID.
                 db.execute('''UPDATE project_time_tracking 
-                                SET end_time = datetime('now'), activities = ? 
-                                WHERE proj_name = ?''', (activities, proj_name,))
+                               SET end_time = datetime('now'), activities = ? 
+                               WHERE id = ?''', (activities, session_id,))
         except Exception as e:
             print(f"Could not update into databse {self._db_path} ({e}), exiting...")
             sys.exit(1)
@@ -78,7 +84,7 @@ class SQLiteStorage():
         try:
             with sqlite3.connect(self._db_path) as db:
                 query = "SELECT * FROM project_time_tracking WHERE proj_name = ?;"
-                df = pd.read_sql_query(query, db)
+                df = pd.read_sql_query(query, db, params=(proj_name,))
         except Exception as e:
             print(f"Could not read from database {self._db_path} ({e}), exiting...")
             sys.exit(1)
@@ -96,7 +102,7 @@ class SQLiteStorage():
         """        
         try:
             with sqlite3.connect(self._db_path) as db:
-                query = "SELECT proj_name FROM project_time_tracking;"
+                query = "SELECT DISTINCT proj_name FROM project_time_tracking;"
                 table = db.execute(query).fetchall()
         except Exception as e:
             print(f"Could not read from database {self._db_path} ({e}), exiting...")
