@@ -90,17 +90,38 @@ class Storage():
             print(df) 
         df.to_csv(f"{self.project_name}_time_tracker.csv")
 
+def list_projects(storage: Storage) -> None:
+    """Lists all projects being tracked
+    """        
+    try:
+        with sqlite3.connect(storage._db_path) as db:
+            query = "SELECT name FROM sqlite_master WHERE type='table';"
+            tables = db.execute(query).fetchall()
+    except Exception as e:
+        print(f"Could not read from database {storage._db_path} ({e}), exiting...")
+        sys.exit(1)
+    print('Projects tracked:')
+    for table in tables:
+        print(table[0])
+
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(description="Track a project's working hours.")
-    arg_parser.add_argument('projectname', help="The name of the project is needed as the first argument.")
+    arg_parser.add_argument('projectname', nargs='?', default=None, help="The name of the project is needed as the first argument.")
     arg_parser.add_argument('-start', action='store_true', help='Start a working period')
     arg_parser.add_argument('-stop', nargs='*', default=None, help='Stop a working period and provide a description (optional)')
     arg_parser.add_argument('-print', action='store_true', help='Write project time usage to .csv')
+    arg_parser.add_argument('-list', action='store_true', help='List all tracked projects') 
 
     args = arg_parser.parse_args()
 
-    if args.stop is not None:
+    if args.projectname is None and not args.list:
+        print("Please provide a project name as the first argument.")
+        sys.exit(1)
+
+    if args.list:
+        list_projects(Storage('temp_for_listing'))
+    elif args.stop is not None:
         description = " ".join(args.stop) if args.stop else input("What did you do in this session? ")
         Storage(args.projectname).stop_working(description)
     elif args.start:
