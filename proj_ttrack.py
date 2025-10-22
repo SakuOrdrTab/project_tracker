@@ -4,6 +4,8 @@ import sys
 import pandas as pd
 import argparse
 
+from src.SQLiteStorage import SQLiteStorage
+
 class Storage():
     """Has the functionality and storage means for tracking project's time consumption. Implemented with SQLite
     """    
@@ -106,6 +108,8 @@ def list_projects(storage: Storage) -> None:
 
 
 if __name__ == "__main__":
+    storage = SQLiteStorage()
+
     arg_parser = argparse.ArgumentParser(description="Track a project's working hours.")
     arg_parser.add_argument('projectname', nargs='?', default=None, help="The name of the project is needed as the first argument.")
     arg_parser.add_argument('-start', action='store_true', help='Start a working period')
@@ -120,13 +124,13 @@ if __name__ == "__main__":
         sys.exit(1)
 
     if args.list:
-        list_projects(Storage('temp_for_listing'))
+        storage.list_projects()
     elif args.stop is not None:
         description = " ".join(args.stop) if args.stop else input("What did you do in this session? ")
-        Storage(args.projectname).stop_working(description)
+        storage.stop_working(proj_name=args.projectname, activities=description)
     elif args.start:
-        Storage(args.projectname).start_working()
+        storage.start_working(proj_name=args.projectname)
     elif args.print:
-        Storage(args.projectname).write_project_to_csv()
+        storage.write_project_to_csv(proj_name=args.projectname)
     else:
         arg_parser.print_help()  # No valid arguments, print help
