@@ -34,7 +34,7 @@ class SQLiteStorage():
         try:
             with sqlite3.connect(self._db_path) as db:
                 # Check if there is already an ongoing session
-                if db.execute(f"SELECT id FROM project_time_tracking WHERE end_time IS NULL AND proj_name = ?",
+                if db.execute("SELECT id FROM project_time_tracking WHERE end_time IS NULL AND proj_name = ?",
                                (proj_name,)).fetchone():
                     print("There is already an ongoing session. Please stop the current session before starting a new one.")
                     return
