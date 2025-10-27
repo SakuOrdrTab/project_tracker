@@ -4,6 +4,7 @@ import os
 import sys
 
 import sqlite3
+import sqlalchemy
 import pandas as pd
 
 
@@ -124,3 +125,7 @@ class SQLiteStorage:
         print("Projects tracked:")
         for row in table:
             print(row[0])
+
+
+if __name__ == "__main__":
+    print(f"SQLAlchemy version:  {sqlalchemy.__version__}")
