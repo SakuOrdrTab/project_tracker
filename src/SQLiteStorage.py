@@ -5,8 +5,9 @@ import sys
 from datetime import datetime
 
 import sqlite3
-from sqlalchemy import Integer, __version__, String, DateTime, Text
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import Integer, __version__, String, DateTime, Text, create_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
+from sqlalchemy.exc import SQLAlchemyError
 import pandas as pd
 
 # Base class for making ORM classes
@@ -25,25 +26,40 @@ class ProjectSession(Base):
 
 
 class SQLiteStorage:
-    """Has the functionality and storage means for tracking project's time consumption. Implemented with SQLite"""
+    """Has the functionality and storage means for tracking project's time consumption. Implemented with SQLAlchemy and SQLite3."""
 
     def __init__(self) -> None:
         """Constructs a Storage object: SQLite3 local file database"""
         self._db_path = os.path.join(".", "proj_ttrack.db")
-        # Create a new database if needed
-        if not os.path.exists(self._db_path):
-            self.initialize_database()
+        self._db_url = f"sqlite:///{self._db_path}"
 
-    def initialize_database(self) -> None:
-        """Initializes a new Sqlite3 database if no prior exists"""
+        self.engine = create_engine(self._db_url, echo=True)
+        
+        Session = sessionmaker(bind=self.engine)
+        self.session = Session()
+        
         try:
-            with sqlite3.connect(self._db_path) as db:
-                # Create the table for tracking project time usage
-                db.execute("""CREATE TABLE project_time_tracking 
-                                (id INTEGER PRIMARY KEY, proj_name TEXT, start_time TEXT, end_time TEXT, activities TEXT)""")
-        except Exception as e:
-            print(f"Could not initialize database {self._db_path} ({e}), exiting...")
+            Base.metadata.create_all(self.engine)
+        except SQLAlchemyError as e:
+            print(f"Could not connect to database {self._db_path} with SQLAlchemy ({e}), exiting...")
+            self.session.close()
             sys.exit(1)
+        except Exception as e:
+            print(f"An unexpected error occurred ({e}), exiting...")
+            self.session.close()
+            sys.exit(1)
+
+
+    # def initialize_database(self) -> None:
+    #     """Initializes a new Sqlite3 database if no prior exists"""
+    #     try:
+    #         with sqlite3.connect(self._db_path) as db:
+    #             # Create the table for tracking project time usage
+    #             db.execute("""CREATE TABLE project_time_tracking 
+    #                             (id INTEGER PRIMARY KEY, proj_name TEXT, start_time TEXT, end_time TEXT, activities TEXT)""")
+    #     except Exception as e:
+    #         print(f"Could not initialize database {self._db_path} ({e}), exiting...")
+    #         sys.exit(1)
 
     def start_working(self, proj_name: str) -> None:
         """A Start time is marked in the database"""
