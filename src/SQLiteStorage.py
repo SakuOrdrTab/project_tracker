@@ -2,10 +2,26 @@
 
 import os
 import sys
+from datetime import datetime
 
 import sqlite3
-import sqlalchemy
+from sqlalchemy import Integer, __version__, String, DateTime, Text
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 import pandas as pd
+
+# Base class for making ORM classes
+class Base(DeclarativeBase):
+    pass
+
+# Schema for the project time tracking table
+class ProjectSession(Base):
+    __tablename__ = "project_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    proj_name: Mapped[str] = mapped_column(String, nullable=False)
+    start_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    end_time: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    activities: Mapped[str] = mapped_column(Text, nullable=True)
 
 
 class SQLiteStorage:
@@ -128,4 +144,4 @@ class SQLiteStorage:
 
 
 if __name__ == "__main__":
-    print(f"SQLAlchemy version:  {sqlalchemy.__version__}")
+    print(f"SQLAlchemy version:  {__version__}")
