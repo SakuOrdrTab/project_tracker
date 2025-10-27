@@ -18,10 +18,10 @@ class ProjectSession(Base):
     __tablename__ = "project_sessions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    proj_name: Mapped[str] = mapped_column(String, nullable=False)
-    start_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    end_time: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-    activities: Mapped[str] = mapped_column(Text, nullable=True)
+    proj_name: Mapped[str] = mapped_column(String)
+    start_time: Mapped[datetime] = mapped_column(DateTime)
+    end_time: Mapped[datetime|None] = mapped_column(DateTime)
+    activities: Mapped[str|None] = mapped_column(Text)
 
 
 class SQLiteStorage:
