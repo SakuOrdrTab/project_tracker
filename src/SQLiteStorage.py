@@ -5,7 +5,7 @@ import sys
 from datetime import datetime
 
 import sqlite3
-from sqlalchemy import Integer, __version__, String, DateTime, Text, create_engine
+from sqlalchemy import Integer, __version__, String, DateTime, Text, create_engine, select, insert
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 import pandas as pd
@@ -63,27 +63,38 @@ class SQLiteStorage:
 
     def start_working(self, proj_name: str) -> None:
         """A Start time is marked in the database"""
-        try:
-            with sqlite3.connect(self._db_path) as db:
-                # Check if there is already an ongoing session
-                if db.execute(
-                    "SELECT id FROM project_time_tracking WHERE end_time IS NULL AND proj_name = ?",
-                    (proj_name,),
-                ).fetchone():
-                    print(
-                        "There is already an ongoing session. Please stop the current session before starting a new one."
-                    )
-                    return
+        with self.session.begin():
+            # Check if session is already running
+            ongoing_session = self.session.execute(select(ProjectSession).where(ProjectSession.proj_name == proj_name).where(ProjectSession.end_time.is_(None))).scalars().first()
+            if ongoing_session:
+                print("There is already an ongoing session. Please stop the current session before starting a new one.")
+                return
+            else:
+                newSession = ProjectSession(proj_name=proj_name, start_time=datetime.now())
+                self.session.add(newSession)
+                self.session.commit()
+                print(f"Started working on the project: {proj_name}.")
 
-                # If no ongoing session, start a new one
-                db.execute(
-                    "INSERT INTO project_time_tracking (proj_name, start_time) VALUES (?, datetime('now'))",
-                    (proj_name,),
-                )
-        except Exception as e:
-            print(f"Could not insert into databse {self._db_path} ({e}), exiting...")
-            sys.exit(1)
-        print(f"Started working on the project: {proj_name}.")
+        # try:
+        #     with sqlite3.connect(self._db_path) as db:
+        #         # Check if there is already an ongoing session
+        #         if db.execute(
+        #             "SELECT id FROM project_time_tracking WHERE end_time IS NULL AND proj_name = ?",
+        #             (proj_name,),
+        #         ).fetchone():
+        #             print(
+        #                 "There is already an ongoing session. Please stop the current session before starting a new one."
+        #             )
+        #             return
+
+        #         # If no ongoing session, start a new one
+        #         db.execute(
+        #             "INSERT INTO project_time_tracking (proj_name, start_time) VALUES (?, datetime('now'))",
+        #             (proj_name,),
+        #         )
+        # except Exception as e:
+        #     print(f"Could not insert into databse {self._db_path} ({e}), exiting...")
+        #     sys.exit(1)
 
     def stop_working(self, proj_name: str, activities: str) -> None:
         """A Stopping time is marked in the database together with a description of spent time usage.
@@ -92,38 +103,39 @@ class SQLiteStorage:
             proj_name (str): project's name
             activities (str): description of time spent
         """
-        try:
-            with sqlite3.connect(self._db_path) as db:
-                # Check for the ID of the MOST RECENT ongoing session
-                ongoing_session = db.execute(
-                    """    
-                    SELECT id FROM project_time_tracking 
-                    WHERE end_time IS NULL AND proj_name = ?
-                    ORDER BY start_time DESC LIMIT 1
-                    """,
-                    (proj_name,),
-                ).fetchone()
 
-                if ongoing_session is None:
-                    print("No ongoing session to stop. Please start a session first.")
-                    return
+        # try:
+        #     with sqlite3.connect(self._db_path) as db:
+        #         # Check for the ID of the MOST RECENT ongoing session
+        #         ongoing_session = db.execute(
+        #             """    
+        #             SELECT id FROM project_time_tracking 
+        #             WHERE end_time IS NULL AND proj_name = ?
+        #             ORDER BY start_time DESC LIMIT 1
+        #             """,
+        #             (proj_name,),
+        #         ).fetchone()
 
-                session_id = ongoing_session[0]
+        #         if ongoing_session is None:
+        #             print("No ongoing session to stop. Please start a session first.")
+        #             return
 
-                # Update only the session with that specific ID.
-                db.execute(
-                    """UPDATE project_time_tracking 
-                               SET end_time = datetime('now'), activities = ? 
-                               WHERE id = ?""",
-                    (
-                        activities,
-                        session_id,
-                    ),
-                )
-        except Exception as e:
-            print(f"Could not update into databse {self._db_path} ({e}), exiting...")
-            sys.exit(1)
-        print(f"Stopped working on the project: {proj_name} and recorded activities.")
+        #         session_id = ongoing_session[0]
+
+        #         # Update only the session with that specific ID.
+        #         db.execute(
+        #             """UPDATE project_time_tracking 
+        #                        SET end_time = datetime('now'), activities = ? 
+        #                        WHERE id = ?""",
+        #             (
+        #                 activities,
+        #                 session_id,
+        #             ),
+        #         )
+        # except Exception as e:
+        #     print(f"Could not update into databse {self._db_path} ({e}), exiting...")
+        #     sys.exit(1)
+        # print(f"Stopped working on the project: {proj_name} and recorded activities.")
 
     def write_project_to_csv(self, proj_name: str) -> None:
         """Writes project's time usage in a .csv file"""
