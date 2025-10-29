@@ -5,14 +5,26 @@ import sys
 from datetime import datetime
 
 import sqlite3
-from sqlalchemy import Integer, __version__, String, DateTime, Text, create_engine, select, insert
+from sqlalchemy import (
+    Integer,
+    __version__,
+    String,
+    DateTime,
+    Text,
+    create_engine,
+    select,
+    text,
+    bindparam
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 import pandas as pd
 
+
 # Base class for making ORM classes
 class Base(DeclarativeBase):
     pass
+
 
 # Schema for the project time tracking table
 class ProjectSession(Base):
@@ -21,8 +33,8 @@ class ProjectSession(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     proj_name: Mapped[str] = mapped_column(String)
     start_time: Mapped[datetime] = mapped_column(DateTime)
-    end_time: Mapped[datetime|None] = mapped_column(DateTime)
-    activities: Mapped[str|None] = mapped_column(Text)
+    end_time: Mapped[datetime | None] = mapped_column(DateTime)
+    activities: Mapped[str | None] = mapped_column(Text)
 
 
 class SQLiteStorage:
@@ -34,14 +46,16 @@ class SQLiteStorage:
         self._db_url = f"sqlite:///{self._db_path}"
 
         self.engine = create_engine(self._db_url, echo=True)
-        
+
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
-        
+
         try:
             Base.metadata.create_all(self.engine)
         except SQLAlchemyError as e:
-            print(f"Could not connect to database {self._db_path} with SQLAlchemy ({e}), exiting...")
+            print(
+                f"Could not connect to database {self._db_path} with SQLAlchemy ({e}), exiting..."
+            )
             self.session.close()
             sys.exit(1)
         except Exception as e:
@@ -49,13 +63,12 @@ class SQLiteStorage:
             self.session.close()
             sys.exit(1)
 
-
     # def initialize_database(self) -> None:
     #     """Initializes a new Sqlite3 database if no prior exists"""
     #     try:
     #         with sqlite3.connect(self._db_path) as db:
     #             # Create the table for tracking project time usage
-    #             db.execute("""CREATE TABLE project_time_tracking 
+    #             db.execute("""CREATE TABLE project_time_tracking
     #                             (id INTEGER PRIMARY KEY, proj_name TEXT, start_time TEXT, end_time TEXT, activities TEXT)""")
     #     except Exception as e:
     #         print(f"Could not initialize database {self._db_path} ({e}), exiting...")
@@ -65,14 +78,25 @@ class SQLiteStorage:
         """A Start time is marked in the database"""
         with self.session.begin():
             # Check if session is already running
-            ongoing_session = self.session.execute(select(ProjectSession).where(ProjectSession.proj_name == proj_name).where(ProjectSession.end_time.is_(None))).scalars().first()
+            ongoing_session = (
+                self.session.execute(
+                    select(ProjectSession)
+                    .where(ProjectSession.proj_name == proj_name)
+                    .where(ProjectSession.end_time.is_(None))
+                )
+                .scalars()
+                .first()
+            )
             if ongoing_session:
-                print("There is already an ongoing session. Please stop the current session before starting a new one.")
+                print(
+                    "There is already an ongoing session. Please stop the current session before starting a new one."
+                )
                 return
             else:
-                newSession = ProjectSession(proj_name=proj_name, start_time=datetime.now())
-                self.session.add(newSession)
-                self.session.commit()
+                new_session = ProjectSession(
+                    proj_name=proj_name, start_time=datetime.now()
+                )
+                self.session.add(new_session)
                 print(f"Started working on the project: {proj_name}.")
 
         # try:
@@ -103,13 +127,29 @@ class SQLiteStorage:
             proj_name (str): project's name
             activities (str): description of time spent
         """
+        with self.session.begin():
+            ongoing_session = self.session.execute(
+                select(ProjectSession)
+                .where(ProjectSession.proj_name == proj_name)
+                .where(ProjectSession.end_time.is_(None))
+                .order_by(ProjectSession.start_time.desc())
+            ).scalars().first()
+
+            if ongoing_session is None:
+                print("No ongoing session to stop. Please start a session first.")
+                return
+
+            ongoing_session.end_time = datetime.now()
+            ongoing_session.activities = activities
+
+            print(f"Stopped working on the project: {proj_name} and recorded activities.")
 
         # try:
         #     with sqlite3.connect(self._db_path) as db:
         #         # Check for the ID of the MOST RECENT ongoing session
         #         ongoing_session = db.execute(
-        #             """    
-        #             SELECT id FROM project_time_tracking 
+        #             """
+        #             SELECT id FROM project_time_tracking
         #             WHERE end_time IS NULL AND proj_name = ?
         #             ORDER BY start_time DESC LIMIT 1
         #             """,
@@ -124,8 +164,8 @@ class SQLiteStorage:
 
         #         # Update only the session with that specific ID.
         #         db.execute(
-        #             """UPDATE project_time_tracking 
-        #                        SET end_time = datetime('now'), activities = ? 
+        #             """UPDATE project_time_tracking
+        #                        SET end_time = datetime('now'), activities = ?
         #                        WHERE id = ?""",
         #             (
         #                 activities,
@@ -139,21 +179,26 @@ class SQLiteStorage:
 
     def write_project_to_csv(self, proj_name: str) -> None:
         """Writes project's time usage in a .csv file"""
-        try:
-            with sqlite3.connect(self._db_path) as db:
-                # Select all rows for the given project
-                query = "SELECT * FROM project_time_tracking WHERE proj_name = ?;"
-                df = pd.read_sql_query(query, db, params=(proj_name,))
-        except Exception as e:
-            print(f"Could not read from database {self._db_path} ({e}), exiting...")
-            sys.exit(1)
+        # Select all entries ORM style
+        stmt = (
+            select(ProjectSession.__table__)
+            .where(ProjectSession.proj_name == bindparam("pname"))
+        )
 
-        df["start_time"] = pd.to_datetime(df["start_time"])
-        df["end_time"] = pd.to_datetime(df["end_time"])
+        # Pass projectname andquery to pandas read_sql
+        with self.session.connection() as conn:
+            df = pd.read_sql(stmt, conn, params={"pname": proj_name})
 
-        df["duration"] = df["end_time"] - df["start_time"]
-        if df.shape[0] < 100:  # Don't print million rows to screen
-            print(df)
+        if df.empty:
+            print(f"No sessions found for project '{proj_name}'.")
+            return
+
+        # Safe, consistent dtypes
+        df["start_time"] = pd.to_datetime(df["start_time"], errors="coerce")
+        df["end_time"]   = pd.to_datetime(df["end_time"],   errors="coerce")
+        df["duration"]   = df["end_time"] - df["start_time"]
+
+        print(df)
         df.to_csv(f"{proj_name}_time_tracker.csv")
 
     def list_projects(self) -> None:
