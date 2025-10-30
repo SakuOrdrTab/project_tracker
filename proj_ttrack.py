@@ -3,11 +3,11 @@ import sys
 
 import argparse
 
-from src.SQLiteStorage import SQLiteStorage
+from src.SQLiteLocalStorage import SQLiteLocalStorage
 
 if __name__ == "__main__":
     # Sqlite3 central storage
-    storage = SQLiteStorage()
+    storage = SQLiteLocalStorage()
 
     arg_parser = argparse.ArgumentParser(description="Track a project's working hours.")
     # Positional argument: project name

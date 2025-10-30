@@ -36,8 +36,10 @@ class ProjectSession(Base):
     activities: Mapped[str | None] = mapped_column(Text)
 
 
-class SQLiteStorage:
-    """Has the functionality and storage means for tracking project's time consumption. Implemented with SQLAlchemy and SQLite3."""
+class SQLiteLocalStorage:
+    """Has the functionality and storage means for tracking project's time consumption.
+    Store data in a local SQLite3 database file.
+    Implemented with SQLAlchemy and SQLite3."""
 
     def __init__(self) -> None:
         """Constructs a Storage object: SQLite3 local file database"""
