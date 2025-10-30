@@ -1,8 +1,6 @@
-# import sqlite3
-# import os
+
 import sys
 
-# import pandas as pd
 import argparse
 
 from src.SQLiteStorage import SQLiteStorage
