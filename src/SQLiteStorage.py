@@ -4,7 +4,7 @@ import os
 import sys
 from datetime import datetime
 
-import sqlite3
+# import sqlite3
 from sqlalchemy import (
     Integer,
     __version__,
@@ -13,8 +13,7 @@ from sqlalchemy import (
     Text,
     create_engine,
     select,
-    text,
-    bindparam
+    bindparam,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
@@ -63,17 +62,6 @@ class SQLiteStorage:
             self.session.close()
             sys.exit(1)
 
-    # def initialize_database(self) -> None:
-    #     """Initializes a new Sqlite3 database if no prior exists"""
-    #     try:
-    #         with sqlite3.connect(self._db_path) as db:
-    #             # Create the table for tracking project time usage
-    #             db.execute("""CREATE TABLE project_time_tracking
-    #                             (id INTEGER PRIMARY KEY, proj_name TEXT, start_time TEXT, end_time TEXT, activities TEXT)""")
-    #     except Exception as e:
-    #         print(f"Could not initialize database {self._db_path} ({e}), exiting...")
-    #         sys.exit(1)
-
     def start_working(self, proj_name: str) -> None:
         """A Start time is marked in the database"""
         with self.session.begin():
@@ -99,27 +87,6 @@ class SQLiteStorage:
                 self.session.add(new_session)
                 print(f"Started working on the project: {proj_name}.")
 
-        # try:
-        #     with sqlite3.connect(self._db_path) as db:
-        #         # Check if there is already an ongoing session
-        #         if db.execute(
-        #             "SELECT id FROM project_time_tracking WHERE end_time IS NULL AND proj_name = ?",
-        #             (proj_name,),
-        #         ).fetchone():
-        #             print(
-        #                 "There is already an ongoing session. Please stop the current session before starting a new one."
-        #             )
-        #             return
-
-        #         # If no ongoing session, start a new one
-        #         db.execute(
-        #             "INSERT INTO project_time_tracking (proj_name, start_time) VALUES (?, datetime('now'))",
-        #             (proj_name,),
-        #         )
-        # except Exception as e:
-        #     print(f"Could not insert into databse {self._db_path} ({e}), exiting...")
-        #     sys.exit(1)
-
     def stop_working(self, proj_name: str, activities: str) -> None:
         """A Stopping time is marked in the database together with a description of spent time usage.
 
@@ -128,12 +95,16 @@ class SQLiteStorage:
             activities (str): description of time spent
         """
         with self.session.begin():
-            ongoing_session = self.session.execute(
-                select(ProjectSession)
-                .where(ProjectSession.proj_name == proj_name)
-                .where(ProjectSession.end_time.is_(None))
-                .order_by(ProjectSession.start_time.desc())
-            ).scalars().first()
+            ongoing_session = (
+                self.session.execute(
+                    select(ProjectSession)
+                    .where(ProjectSession.proj_name == proj_name)
+                    .where(ProjectSession.end_time.is_(None))
+                    .order_by(ProjectSession.start_time.desc())
+                )
+                .scalars()
+                .first()
+            )
 
             if ongoing_session is None:
                 print("No ongoing session to stop. Please start a session first.")
@@ -142,47 +113,15 @@ class SQLiteStorage:
             ongoing_session.end_time = datetime.now()
             ongoing_session.activities = activities
 
-            print(f"Stopped working on the project: {proj_name} and recorded activities.")
-
-        # try:
-        #     with sqlite3.connect(self._db_path) as db:
-        #         # Check for the ID of the MOST RECENT ongoing session
-        #         ongoing_session = db.execute(
-        #             """
-        #             SELECT id FROM project_time_tracking
-        #             WHERE end_time IS NULL AND proj_name = ?
-        #             ORDER BY start_time DESC LIMIT 1
-        #             """,
-        #             (proj_name,),
-        #         ).fetchone()
-
-        #         if ongoing_session is None:
-        #             print("No ongoing session to stop. Please start a session first.")
-        #             return
-
-        #         session_id = ongoing_session[0]
-
-        #         # Update only the session with that specific ID.
-        #         db.execute(
-        #             """UPDATE project_time_tracking
-        #                        SET end_time = datetime('now'), activities = ?
-        #                        WHERE id = ?""",
-        #             (
-        #                 activities,
-        #                 session_id,
-        #             ),
-        #         )
-        # except Exception as e:
-        #     print(f"Could not update into databse {self._db_path} ({e}), exiting...")
-        #     sys.exit(1)
-        # print(f"Stopped working on the project: {proj_name} and recorded activities.")
+            print(
+                f"Stopped working on the project: {proj_name} and recorded activities."
+            )
 
     def write_project_to_csv(self, proj_name: str) -> None:
         """Writes project's time usage in a .csv file"""
         # Select all entries ORM style
-        stmt = (
-            select(ProjectSession.__table__)
-            .where(ProjectSession.proj_name == bindparam("pname"))
+        stmt = select(ProjectSession.__table__).where(
+            ProjectSession.proj_name == bindparam("pname")
         )
 
         # Pass projectname andquery to pandas read_sql
@@ -195,25 +134,21 @@ class SQLiteStorage:
 
         # Safe, consistent dtypes
         df["start_time"] = pd.to_datetime(df["start_time"], errors="coerce")
-        df["end_time"]   = pd.to_datetime(df["end_time"],   errors="coerce")
-        df["duration"]   = df["end_time"] - df["start_time"]
+        df["end_time"] = pd.to_datetime(df["end_time"], errors="coerce")
+        df["duration"] = df["end_time"] - df["start_time"]
 
         print(df)
         df.to_csv(f"{proj_name}_time_tracker.csv")
 
     def list_projects(self) -> None:
         """Lists all projects being tracked"""
-        try:
-            with sqlite3.connect(self._db_path) as db:
-                # Get all distinct project names from the DB
-                query = "SELECT DISTINCT proj_name FROM project_time_tracking;"
-                table = db.execute(query).fetchall()
-        except Exception as e:
-            print(f"Could not read from database {self._db_path} ({e}), exiting...")
-            sys.exit(1)
-        print("Projects tracked:")
-        for row in table:
-            print(row[0])
+        project_names = self.session.execute(
+            select(ProjectSession.proj_name).distinct()
+        ).scalars()
+
+        print("Tracked projects: ")
+        for i, project in enumerate(project_names):
+            print(f"{i + 1}: {project}")
 
 
 if __name__ == "__main__":
