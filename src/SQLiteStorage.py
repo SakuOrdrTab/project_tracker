@@ -31,8 +31,8 @@ class ProjectSession(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     proj_name: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    start_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    end_time: Mapped[datetime | None] = mapped_column(DateTime)
+    start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False) # UTC timezone
+    end_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True)) # UTC timezone
     activities: Mapped[str | None] = mapped_column(Text)
 
 
