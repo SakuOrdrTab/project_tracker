@@ -149,8 +149,8 @@ class SQLiteStorage:
             return
 
         # Safe, consistent dtypes
-        df["start_time"] = pd.to_datetime(df["start_time"], errors="coerce")
-        df["end_time"] = pd.to_datetime(df["end_time"], errors="coerce")
+        df["start_time"] = pd.to_datetime(df["start_time"], utc=True, errors="coerce")
+        df["end_time"] = pd.to_datetime(df["end_time"], utc=True, errors="coerce")
         df["duration"] = df["end_time"] - df["start_time"]
 
         print(df)
@@ -163,7 +163,7 @@ class SQLiteStorage:
     def list_projects(self) -> None:
         """Lists all projects being tracked"""
         try:
-            with Session(self.engine) as db_session, db_session.begin():
+            with Session(self.engine) as db_session:
                 project_names = db_session.execute(
                     select(ProjectSession.proj_name).distinct().order_by(ProjectSession.proj_name)
                 ).scalars()
