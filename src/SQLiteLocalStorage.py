@@ -41,12 +41,14 @@ class SQLiteLocalStorage:
     Store data in a local SQLite3 database file.
     Implemented with SQLAlchemy and SQLite3."""
 
-    def __init__(self) -> None:
+    def __init__(self, db_url: str | None = None, echo: bool = False) -> None:
         """Constructs a Storage object: SQLite3 local file database"""
-        self._db_path = os.path.join(".", "proj_ttrack.db")
-        self._db_url = f"sqlite:///{self._db_path}"
-
-        self.engine = create_engine(self._db_url, echo=True)
+        # if no db_url is provided, use default local file,
+        # this also allows testing with in-memory database
+        if db_url is None:
+            db_url = f"sqlite:///{os.path.join('.', 'proj_ttrack.db')}"
+        self.engine = create_engine(db_url, echo=echo)
+        Base.metadata.create_all(self.engine)
 
         try:
             Base.metadata.create_all(self.engine)
