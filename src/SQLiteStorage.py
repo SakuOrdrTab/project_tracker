@@ -64,28 +64,32 @@ class SQLiteStorage:
 
     def start_working(self, proj_name: str) -> None:
         """A Start time is marked in the database"""
-        with self.session.begin():
-            # Check if session is already running
-            ongoing_session = (
-                self.session.execute(
-                    select(ProjectSession)
-                    .where(ProjectSession.proj_name == proj_name)
-                    .where(ProjectSession.end_time.is_(None))
+        try:
+            with self.session.begin():
+                # Check if session is already running
+                ongoing_session = (
+                    self.session.execute(
+                        select(ProjectSession)
+                        .where(ProjectSession.proj_name == proj_name)
+                        .where(ProjectSession.end_time.is_(None))
+                    )
+                    .scalars()
+                    .first()
                 )
-                .scalars()
-                .first()
-            )
-            if ongoing_session:
-                print(
-                    "There is already an ongoing session. Please stop the current session before starting a new one."
-                )
-                return
-            else:
-                new_session = ProjectSession(
-                    proj_name=proj_name, start_time=datetime.now()
-                )
-                self.session.add(new_session)
-                print(f"Started working on the project: {proj_name}.")
+                if ongoing_session:
+                    print(
+                        "There is already an ongoing session. Please stop the current session before starting a new one."
+                    )
+                    return
+                else:
+                    new_session = ProjectSession(
+                        proj_name=proj_name, start_time=datetime.now()
+                    )
+                    self.session.add(new_session)
+                    print(f"Started working on the project: {proj_name}.")
+        except SQLAlchemyError as e:
+            print(f"Encountered DB error: {e}")
+            sys.exit(1)
 
     def stop_working(self, proj_name: str, activities: str) -> None:
         """A Stopping time is marked in the database together with a description of spent time usage.
@@ -94,39 +98,47 @@ class SQLiteStorage:
             proj_name (str): project's name
             activities (str): description of time spent
         """
-        with self.session.begin():
-            ongoing_session = (
-                self.session.execute(
-                    select(ProjectSession)
-                    .where(ProjectSession.proj_name == proj_name)
-                    .where(ProjectSession.end_time.is_(None))
-                    .order_by(ProjectSession.start_time.desc())
+        try:
+            with self.session.begin():
+                ongoing_session = (
+                    self.session.execute(
+                        select(ProjectSession)
+                        .where(ProjectSession.proj_name == proj_name)
+                        .where(ProjectSession.end_time.is_(None))
+                        .order_by(ProjectSession.start_time.desc())
+                    )
+                    .scalars()
+                    .first()
                 )
-                .scalars()
-                .first()
-            )
 
-            if ongoing_session is None:
-                print("No ongoing session to stop. Please start a session first.")
-                return
+                if ongoing_session is None:
+                    print("No ongoing session to stop. Please start a session first.")
+                    return
 
-            ongoing_session.end_time = datetime.now()
-            ongoing_session.activities = activities
+                ongoing_session.end_time = datetime.now()
+                ongoing_session.activities = activities
 
-            print(
-                f"Stopped working on the project: {proj_name} and recorded activities."
-            )
+                print(
+                    f"Stopped working on the project: {proj_name} and recorded activities."
+                )
+        except SQLAlchemyError as e:
+            print(f"Encountered DB error: {e}")
+            sys.exit(1)
 
     def write_project_to_csv(self, proj_name: str) -> None:
         """Writes project's time usage in a .csv file"""
-        # Select all entries ORM style
-        stmt = select(ProjectSession.__table__).where(
-            ProjectSession.proj_name == bindparam("pname")
-        )
+        try: 
+            # Select all entries ORM style
+            stmt = select(ProjectSession.__table__).where(
+                ProjectSession.proj_name == bindparam("pname")
+            )
 
-        # Pass projectname andquery to pandas read_sql
-        with self.session.connection() as conn:
-            df = pd.read_sql(stmt, conn, params={"pname": proj_name})
+            # Pass projectname andquery to pandas read_sql
+            with self.session.connection() as conn:
+                df = pd.read_sql(stmt, conn, params={"pname": proj_name})
+        except SQLAlchemyError as e:
+            print(f"Encountered DB error: {e}")
+            sys.exit(1)
 
         if df.empty:
             print(f"No sessions found for project '{proj_name}'.")
@@ -142,9 +154,13 @@ class SQLiteStorage:
 
     def list_projects(self) -> None:
         """Lists all projects being tracked"""
-        project_names = self.session.execute(
-            select(ProjectSession.proj_name).distinct()
-        ).scalars()
+        try:
+            project_names = self.session.execute(
+                select(ProjectSession.proj_name).distinct()
+            ).scalars()
+        except SQLAlchemyError as e:
+            print(f"Encountered DB error: {e}")
+            sys.exit(1)
 
         print("Tracked projects: ")
         for i, project in enumerate(project_names):
