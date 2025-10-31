@@ -51,19 +51,17 @@ class SQLiteLocalStorage:
         if db_url is None:
             here = Path(sys.argv[0]).resolve().parent
             db_url = f"sqlite:///{here / 'proj_ttrack.db'}"
-        self.engine = create_engine(db_url, echo=echo)
-        self.engine = create_engine(db_url, echo=echo)
-        Base.metadata.create_all(self.engine)
 
         try:
+            self.engine = create_engine(db_url, echo=echo)
             Base.metadata.create_all(self.engine)
         except SQLAlchemyError as e:
             print(
-                f"Could not connect to database {self._db_path} with SQLAlchemy ({e}), exiting..."
+                f"Could not connect to database {self._db_path} with SQLAlchemy ({e})"
             )
             raise RuntimeError('Database connection error') from e
         except Exception as e:
-            print(f"An unexpected error occurred ({e}), exiting...")
+            print(f"An unexpected error occurred ({e})")
             raise RuntimeError('Unexpected error during database initialization') from e
 
     def start_working(self, proj_name: str) -> None:
@@ -95,7 +93,7 @@ class SQLiteLocalStorage:
             print(f"Encountered DB error: {e}")
             raise RuntimeError('Database error starting project session') from e
         except Exception as e:
-            print(f"An unexpected error occurred ({e}), exiting...")
+            print(f"An unexpected error occurred ({e})")
             raise RuntimeError('Unexpected error starting project session') from e
 
     def stop_working(self, proj_name: str, activities: str) -> None:
@@ -132,7 +130,7 @@ class SQLiteLocalStorage:
             print(f"Encountered DB error: {e}")
             raise RuntimeError('Database error stopping project session') from e
         except Exception as e:
-            print(f"An unexpected error occurred ({e}), exiting...")
+            print(f"An unexpected error occurred ({e})")
             raise RuntimeError('Unexpected error stopping project session') from e
 
     def write_project_to_csv(self, proj_name: str) -> None:
@@ -166,7 +164,7 @@ class SQLiteLocalStorage:
         try:
             df.to_csv(f"{proj_name}_time_tracker.csv", index=False)
         except Exception as e:
-            print(f"Could not write to .csv file ({e}), exiting...")
+            print(f"Could not write to .csv file ({e})")
             raise RuntimeError('Error writing CSV file') from e
 
     def list_projects(self) -> None:
@@ -180,7 +178,7 @@ class SQLiteLocalStorage:
             print(f"Encountered DB error: {e}")
             raise RuntimeError('Database error listing projects') from e
         except Exception as e:
-            print(f"An unexpected error occurred ({e}), exiting...")
+            print(f"An unexpected error occurred ({e})")
             raise RuntimeError('Unexpected error listing projects') from e
 
         print("Tracked projects: ")
