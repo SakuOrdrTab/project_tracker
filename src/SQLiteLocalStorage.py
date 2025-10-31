@@ -1,6 +1,8 @@
 """A Centralized Sqlite3 storage for multiple projects"""
 
 import os
+import sys
+from pathlib import Path
 # UTC Timezone is used globally for this module
 from datetime import datetime, timezone
 
@@ -45,8 +47,11 @@ class SQLiteLocalStorage:
         """Constructs a Storage object: SQLite3 local file database"""
         # if no db_url is provided, use default local file,
         # this also allows testing with in-memory database
+        # "here" is needed to make sure DB is not created in some random CWD
         if db_url is None:
-            db_url = f"sqlite:///{os.path.join('.', 'proj_ttrack.db')}"
+            here = Path(sys.argv[0]).resolve().parent
+            db_url = f"sqlite:///{here / 'proj_ttrack.db'}"
+        self.engine = create_engine(db_url, echo=echo)
         self.engine = create_engine(db_url, echo=echo)
         Base.metadata.create_all(self.engine)
 
