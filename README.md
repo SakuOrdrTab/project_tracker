@@ -1,11 +1,11 @@
 # A Small project time tracker
 
 ## Install
-This is a python script.
 
-To install, clone it to a suitable folder for python projects, let's say C:\PYTHON\project_tracker
+These instructions are made for usage in Windows platform; you need to make tweaks for the shell scripts etc for this to work in unix, linux and whatever... I also assume you want to have a centralized location for the script as you want to track multiple projects.
 
-Then, create a virtual environment for the project, activate it and install dependancies
+Pick a nice folder, that you are comfortable placing the project root later to system PATH
+Clone the repo there, create a virtual environment named .venv and install requirements:
 
 >python - m venv .venv
 >
@@ -14,21 +14,18 @@ Then, create a virtual environment for the project, activate it and install depe
 >pip install -r requirements.txt
 >
 
-Then you can run it with your python interpreter
-
->python proj_ttracker.py
->
+Add then the project root to your system PATH, so that your windows finds the proj_ttrack.cmd script from anywhere.
 
 ## Usage
 
-This script is designed to be used from a command prompt:
+This script is designed to be used from a command prompt. After you have added the project root to your PATH, just run:
 
->python proj_ttracker.py <project_name> -start/-stop/-print <optional_args>
->
+>proj_ttrack <args>
 
 <I>'<project_name> -start'</I> Sets a starting time for a project work session. Run this when you start coding<BR>
 <I>'<project_name> -stop <optional_text>'</I>  Sets the closing time, use when you stop coding. if optional text is empty, it asks for what you did durring the session<BR>
 <I>'-print'</I> Prints your sessions to a `.csv`-file<BR>
+<I>'-list'</I> Lists all tracked projects in database<BR>
 
 I find it easiest, that if I start a project, I create two windows thumbnails with different args; one for starting to code the project, another to quit a session. When I work a session with the project, I run the first thumbnail, then when I finish, I run the latter. An example in windows for a suitable batch file could be like this:
 >`start.bat`<BR>
