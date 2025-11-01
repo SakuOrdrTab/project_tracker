@@ -1,11 +1,11 @@
-
 import sys
 
 import argparse
 
 from src.SQLiteLocalStorage import SQLiteLocalStorage
 
-if __name__ == "__main__":
+
+def main() -> None:
     # Sqlite3 central storage
     storage = SQLiteLocalStorage()
 
@@ -30,7 +30,9 @@ if __name__ == "__main__":
     )
     # Optional argument: print project time usage to .csv
     arg_parser.add_argument(
-        "-print", action="store_true", help="Write project time usage to .csv"
+        "-export",
+        action="store_true",
+        help="Write project time usage to .csv (current working directory)",
     )
     # Optional argument: list all tracked projects
     arg_parser.add_argument(
@@ -58,7 +60,11 @@ if __name__ == "__main__":
         storage.stop_working(proj_name=args.projectname, activities=description)
     elif args.start:
         storage.start_working(proj_name=args.projectname)
-    elif args.print:
+    elif args.export:
         storage.write_project_to_csv(proj_name=args.projectname)
     else:
         arg_parser.print_help()  # No valid arguments, print help
+
+
+if __name__ == "__main__":
+    main()

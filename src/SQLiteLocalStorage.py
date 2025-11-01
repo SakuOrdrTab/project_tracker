@@ -1,12 +1,10 @@
 """A Centralized Sqlite3 storage for multiple projects"""
 
-import os
-import sys
 from pathlib import Path
+
 # UTC Timezone is used globally for this module
 from datetime import datetime, timezone
 
-# import sqlite3
 from sqlalchemy import (
     Integer,
     __version__,
@@ -17,7 +15,7 @@ from sqlalchemy import (
     select,
     bindparam,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker, Session
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session
 from sqlalchemy.exc import SQLAlchemyError
 import pandas as pd
 
@@ -33,8 +31,12 @@ class ProjectSession(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     proj_name: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False) # UTC timezone
-    end_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True)) # UTC timezone
+    start_time: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )  # UTC timezone
+    end_time: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )  # UTC timezone
     activities: Mapped[str | None] = mapped_column(Text)
 
 
@@ -49,20 +51,18 @@ class SQLiteLocalStorage:
         # this also allows testing with in-memory database
         # "here" is needed to make sure DB is not created in some random CWD
         if db_url is None:
-            here = Path(sys.argv[0]).resolve().parent
+            here = Path(__file__).resolve().parent
             db_url = f"sqlite:///{here / 'proj_ttrack.db'}"
 
         try:
             self.engine = create_engine(db_url, echo=echo)
             Base.metadata.create_all(self.engine)
         except SQLAlchemyError as e:
-            print(
-                f"Could not connect to database {self._db_path} with SQLAlchemy ({e})"
-            )
-            raise RuntimeError('Database connection error') from e
+            print(f"Could not connect to database {db_url} with SQLAlchemy ({e})")
+            raise RuntimeError("Database connection error") from e
         except Exception as e:
             print(f"An unexpected error occurred ({e})")
-            raise RuntimeError('Unexpected error during database initialization') from e
+            raise RuntimeError("Unexpected error during database initialization") from e
 
     def start_working(self, proj_name: str) -> None:
         """A Start time is marked in the database"""
@@ -83,7 +83,7 @@ class SQLiteLocalStorage:
                         "There is already an ongoing session. Please stop the current session before starting a new one."
                     )
                     return
-                
+
                 new_session = ProjectSession(
                     proj_name=proj_name, start_time=datetime.now(timezone.utc)
                 )
@@ -91,10 +91,10 @@ class SQLiteLocalStorage:
                 print(f"Started working on the project: {proj_name}.")
         except SQLAlchemyError as e:
             print(f"Encountered DB error: {e}")
-            raise RuntimeError('Database error starting project session') from e
+            raise RuntimeError("Database error starting project session") from e
         except Exception as e:
             print(f"An unexpected error occurred ({e})")
-            raise RuntimeError('Unexpected error starting project session') from e
+            raise RuntimeError("Unexpected error starting project session") from e
 
     def stop_working(self, proj_name: str, activities: str) -> None:
         """A Stopping time is marked in the database together with a description of spent time usage.
@@ -128,14 +128,14 @@ class SQLiteLocalStorage:
                 )
         except SQLAlchemyError as e:
             print(f"Encountered DB error: {e}")
-            raise RuntimeError('Database error stopping project session') from e
+            raise RuntimeError("Database error stopping project session") from e
         except Exception as e:
             print(f"An unexpected error occurred ({e})")
-            raise RuntimeError('Unexpected error stopping project session') from e
+            raise RuntimeError("Unexpected error stopping project session") from e
 
     def write_project_to_csv(self, proj_name: str) -> None:
         """Writes project's time usage in a .csv file"""
-        try: 
+        try:
             # Select all entries ORM style
             stmt = select(ProjectSession.__table__).where(
                 ProjectSession.proj_name == bindparam("pname")
@@ -146,10 +146,10 @@ class SQLiteLocalStorage:
                 df = pd.read_sql(stmt, conn, params={"pname": proj_name})
         except SQLAlchemyError as e:
             print(f"Encountered DB error: {e}")
-            raise RuntimeError('Database error writing project to CSV') from e
+            raise RuntimeError("Database error writing project to CSV") from e
         except Exception as e:
             print(f"An unexpected error occurred ({e}), exiting...")
-            raise RuntimeError('Unexpected error writing project to CSV') from e
+            raise RuntimeError("Unexpected error writing project to CSV") from e
 
         if df.empty:
             print(f"No sessions found for project '{proj_name}'.")
@@ -165,21 +165,23 @@ class SQLiteLocalStorage:
             df.to_csv(f"{proj_name}_time_tracker.csv", index=False)
         except Exception as e:
             print(f"Could not write to .csv file ({e})")
-            raise RuntimeError('Error writing CSV file') from e
+            raise RuntimeError("Error writing CSV file") from e
 
     def list_projects(self) -> None:
         """Lists all projects being tracked"""
         try:
             with Session(self.engine) as db_session:
                 project_names = db_session.execute(
-                    select(ProjectSession.proj_name).distinct().order_by(ProjectSession.proj_name)
+                    select(ProjectSession.proj_name)
+                    .distinct()
+                    .order_by(ProjectSession.proj_name)
                 ).scalars()
         except SQLAlchemyError as e:
             print(f"Encountered DB error: {e}")
-            raise RuntimeError('Database error listing projects') from e
+            raise RuntimeError("Database error listing projects") from e
         except Exception as e:
             print(f"An unexpected error occurred ({e})")
-            raise RuntimeError('Unexpected error listing projects') from e
+            raise RuntimeError("Unexpected error listing projects") from e
 
         print("Tracked projects: ")
         for i, project in enumerate(project_names):
