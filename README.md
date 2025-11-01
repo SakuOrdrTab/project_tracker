@@ -26,17 +26,7 @@ This script is designed to be used from a command prompt. After you have added t
 <I>'<project_name> -stop <optional_text>'</I>  Sets the closing time, use when you stop coding. if optional text is empty, it asks for what you did durring the session<BR>
 <I>'-print'</I> Prints your sessions to a `.csv`-file<BR>
 <I>'-list'</I> Lists all tracked projects in database<BR>
-
-I find it easiest, that if I start a project, I create two windows thumbnails with different args; one for starting to code the project, another to quit a session. When I work a session with the project, I run the first thumbnail, then when I finish, I run the latter. An example in windows for a suitable batch file could be like this:
->`start.bat`<BR>
->cd C:\Users\user\Documents\Python\project_tracker<BR>
-><BR>
->:: activate virtual env, call is necessary because of path env var update<BR>
->call .\.venv\Scripts\activate<BR>
-><BR>
->:: run the venv version python.exe<BR>
->python.exe .\proj_ttrack.py .\project_name -start<BR>
->.\.venv\Scripts\deactivate<BR>
+<I>'-install'</I> Adds two windows batch files, start_track.bat and stop_track.bat to your current working directory. I suggest that as your proj_ttrack is in your PATH, you run this in your new project where you want to track time sessions. Running the bats eases you from typing the project name every time.<BR>
 
 ## Additional info
 
