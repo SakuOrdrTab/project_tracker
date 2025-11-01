@@ -5,7 +5,7 @@ each project"""
 from os import path, getcwd
 
 # Illegal windows filename chars
-ILLEGAL_CHARS = set('<>:"/\\|?*')
+ILLEGAL_CHARS = set('<>:"/\\|?*&|^%!()[]{};=,~`')
 
 
 def validate_proj_name(name: str) -> bool:
@@ -40,11 +40,13 @@ for 'my funny project' you can use 'my-funny-project' for example""")
         proj_name = input("Please give a new name: ")
 
     start_bat = f"""
-    proj_ttrack {proj_name} -start
+@echo off
+proj_ttrack {proj_name} -start
     """
 
     stop_bat = f"""
-    proj_ttrack {proj_name} -stop %*
+@echo off
+proj_ttrack {proj_name} -stop %*
     """
 
     with open(start_path, "w", encoding="utf-8") as file:
@@ -52,5 +54,7 @@ for 'my funny project' you can use 'my-funny-project' for example""")
 
     with open(stop_path, "w", encoding="utf-8") as file:
         file.writelines(stop_bat)
+
+    print(f"Created {start_path} and {stop_path}.")
 
     return None
