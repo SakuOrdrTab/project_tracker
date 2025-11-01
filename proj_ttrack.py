@@ -3,6 +3,7 @@ import sys
 import argparse
 
 from src.SQLiteLocalStorage import SQLiteLocalStorage
+from src.installer import install_bats_to_cwd
 
 
 def main() -> None:
@@ -38,11 +39,17 @@ def main() -> None:
     arg_parser.add_argument(
         "-list", action="store_true", help="List all tracked projects"
     )
+    # Install windows batch files to CWD, designed to be useful for each project
+    arg_parser.add_argument(
+        "-install",
+        action="store_true",
+        help="Install batch files for current working directory to start and stop a session",
+    )
 
     args = arg_parser.parse_args()
 
-    # Validate that project name is provided if not listing projects
-    if args.projectname is None and not args.list:
+    # Validate that project name is provided if not listing projects or installing
+    if args.projectname is None and not args.list and not args.install:
         print("Please provide a project name as the first argument.")
         sys.exit(1)
 
@@ -62,6 +69,8 @@ def main() -> None:
         storage.start_working(proj_name=args.projectname)
     elif args.export:
         storage.write_project_to_csv(proj_name=args.projectname)
+    elif args.install:
+        install_bats_to_cwd()
     else:
         arg_parser.print_help()  # No valid arguments, print help
 
