@@ -2,6 +2,7 @@
 
 import os
 from dotenv import load_dotenv
+from typing import Literal
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import create_engine
@@ -16,31 +17,18 @@ class PostgreCloudStorage(SQLiteLocalStorage):
     interactions, only the initialization process is different - all else is inherited
     from the SQLiteLocalStorage class"""
 
-    def __init__(self, db_url: str | None = None, echo: bool = False) -> None:
+    def __init__(self, profile: Literal["prod", "test"] = "test", echo: bool = False) -> None:
         load_dotenv()
-        # The db_url parameter is for testing, actual default is None, and then the cloud postgres is used
-        if db_url is None:  # PRODUCTION env vars
-            user = os.environ.get("POSTGRES_USER")
-            pwd = os.environ.get("POSTGRES_PASSWORD")
-            host = os.environ.get("POSTGRES_HOST")
-            port = os.environ.get("POSTGRES_PORT")  # host part
-            db = os.environ.get("POSTGRES_DBNAME")
-            # Default connections to supabase require ipV6
-            # However, this connection string is especially for ipV4
-            db_url = f"postgresql://{user}:{pwd}@{host}:{port}/{db}"
-        else:  # TESTING
-            try:
-                user = os.environ.get("TEST_POSTGRES_USER")
-                pwd = os.environ.get("TEST_POSTGRES_PASSWORD")
-                host = os.environ.get("TEST_POSTGRES_HOST")
-                port = os.environ.get("TEST_POSTGRES_PORT")  # host part
-                db = os.environ.get("TEST_POSTGRES_DBNAME")
-                db_url = f"postgresql://{user}:{pwd}@{host}:{port}/{db}"
-            except Exception as e:
-                print(
-                    "Exception occured while assigning TEST environment postgre/supabase variables."
-                )
-                raise RuntimeError("Environment loading error") from e
+        env_key = "POSTGRES_URL" if profile == "prod" else "TEST_POSTGRES_URL"
+        db_url = os.getenv(env_key, "").strip()
+        print("db_url:", db_url)
+
+        if not db_url:
+            raise RuntimeError(
+                f"{env_key} is empty or missing. "
+                f"Set it to your full Supabase URL, e.g. "
+                f"postgresql+psycopg://user:pass@pooler-host:6543/db?sslmode=require"
+            )
 
         try:
             self.engine = create_engine(

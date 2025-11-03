@@ -10,7 +10,7 @@ from src.installer import install_bats_to_cwd
 
 def main() -> None:
     # Postgres central storage
-    storage = PostgreCloudStorage()
+    storage = PostgreCloudStorage(profile="prod")
 
     arg_parser = argparse.ArgumentParser(description="Track a project's working hours.")
     # Positional argument: project name
