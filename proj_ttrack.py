@@ -3,7 +3,8 @@ import argparse
 from dotenv import load_dotenv
 import os
 
-from src.SQLiteLocalStorage import SQLiteLocalStorage
+# from src.SQLiteLocalStorage import SQLiteLocalStorage
+from src.PostgreCloudStorage import PostgreCloudStorage
 from src.installer import install_bats_to_cwd
 
 
@@ -15,7 +16,7 @@ def main() -> None:
         print(f"TEST environment variable is set to: {TEST}")
 
     # Sqlite3 central storage
-    storage = SQLiteLocalStorage()
+    storage = PostgreCloudStorage()
 
     arg_parser = argparse.ArgumentParser(description="Track a project's working hours.")
     # Positional argument: project name

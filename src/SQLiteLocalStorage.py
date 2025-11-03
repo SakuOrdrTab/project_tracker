@@ -171,11 +171,15 @@ class SQLiteLocalStorage:
         """Lists all projects being tracked"""
         try:
             with Session(self.engine) as db_session:
-                project_names = db_session.execute(
-                    select(ProjectSession.proj_name)
-                    .distinct()
-                    .order_by(ProjectSession.proj_name)
-                ).scalars()
+                project_names = (
+                    db_session.execute(
+                        select(ProjectSession.proj_name)
+                        .distinct()
+                        .order_by(ProjectSession.proj_name)
+                    )
+                    .scalars()
+                    .all()
+                )
         except SQLAlchemyError as e:
             print(f"Encountered DB error: {e}")
             raise RuntimeError("Database error listing projects") from e

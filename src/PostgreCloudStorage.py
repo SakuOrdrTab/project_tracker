@@ -1,13 +1,14 @@
-from pathlib import Path
+# from pathlib import Path
 import os
 from dotenv import load_dotenv
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import create_engine
+# from sqlalchemy.orm import Session
 from sqlalchemy.pool import NullPool
 
 
-from SQLiteLocalStorage import Base, ProjectSession, SQLiteLocalStorage
+from src.SQLiteLocalStorage import Base, SQLiteLocalStorage
 
 class PostgreCloudStorage(SQLiteLocalStorage):
 
@@ -18,13 +19,14 @@ class PostgreCloudStorage(SQLiteLocalStorage):
         # The db_url parameter is for testing, actual default is None, and then the cloud postgres is used
         if db_url is None:
             load_dotenv()
-            user = os.environ.get("POSTGRES_USERNAME")
+            user = os.environ.get("POSTGRES_USER")
             pwd  = os.environ.get("POSTGRES_PASSWORD")
-            ref  = os.environ.get("POSTGRES_REF")  # host part or project ref
-            db   = os.environ.get("POSTGRES_DB")
-            # Supabase works with standard Postgres; use psycopg v3 driver
-            # Add sslmode=require for hosted instances
-            db_url = f"postgresql+psycopg://{user}:{pwd}@{ref}.supabase.co:5432/{db}?sslmode=require"
+            host = os.environ.get("POSTGRES_HOST")
+            port  = os.environ.get("POSTGRES_PORT")  # host part
+            db   = os.environ.get("POSTGRES_DBNAME")
+            # Default connections to supabase require ipV6
+            # However, this connection string is especially for ipV4
+            db_url = f"postgresql://{user}:{pwd}@{host}:{port}/{db}"
 
         try:
             self.engine = create_engine(
@@ -40,3 +42,4 @@ class PostgreCloudStorage(SQLiteLocalStorage):
         except Exception as e:
             print(f"An unexpected error occurred ({e})")
             raise RuntimeError("Unexpected error during database initialization") from e
+        
