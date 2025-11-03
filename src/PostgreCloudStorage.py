@@ -28,7 +28,7 @@ class PostgreCloudStorage(SQLiteLocalStorage):
 
         try:
             self.engine = create_engine(
-                self.db_url,
+                db_url,
                 echo=echo,
                 pool_pre_ping=True,   # validates connections before use
                 poolclass=NullPool,   # avoid holding idle connections (good for serverless)
