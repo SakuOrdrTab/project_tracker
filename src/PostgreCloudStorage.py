@@ -19,7 +19,7 @@ class PostgreCloudStorage(SQLiteLocalStorage):
     def __init__(self, db_url: str | None = None, echo: bool = False) -> None:
         load_dotenv()
         # The db_url parameter is for testing, actual default is None, and then the cloud postgres is used
-        if db_url is None: # PRODUCTION env vars
+        if db_url is None:  # PRODUCTION env vars
             user = os.environ.get("POSTGRES_USER")
             pwd = os.environ.get("POSTGRES_PASSWORD")
             host = os.environ.get("POSTGRES_HOST")
@@ -28,7 +28,7 @@ class PostgreCloudStorage(SQLiteLocalStorage):
             # Default connections to supabase require ipV6
             # However, this connection string is especially for ipV4
             db_url = f"postgresql://{user}:{pwd}@{host}:{port}/{db}"
-        else: # TESTING
+        else:  # TESTING
             try:
                 user = os.environ.get("TEST_POSTGRES_USER")
                 pwd = os.environ.get("TEST_POSTGRES_PASSWORD")
@@ -37,9 +37,10 @@ class PostgreCloudStorage(SQLiteLocalStorage):
                 db = os.environ.get("TEST_POSTGRES_DBNAME")
                 db_url = f"postgresql://{user}:{pwd}@{host}:{port}/{db}"
             except Exception as e:
-                print("Exception occured while assigning TEST environment postgre/supabase variables.")
+                print(
+                    "Exception occured while assigning TEST environment postgre/supabase variables."
+                )
                 raise RuntimeError("Environment loading error") from e
-
 
         try:
             self.engine = create_engine(

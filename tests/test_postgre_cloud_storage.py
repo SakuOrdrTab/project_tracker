@@ -70,6 +70,7 @@ if not all(os.getenv(k) for k in REQUIRED_ENVS):
 
 # ---- Fixtures ----
 
+
 @pytest.fixture(scope="module")
 def storage() -> PostgreCloudStorage:
     """
@@ -94,6 +95,7 @@ def _clean_table_between_tests(storage: PostgreCloudStorage):
 
 # ---- Helpers ----
 
+
 def _duration_seconds(series: pd.Series) -> pd.Series:
     """
     Normalize a 'duration' column to integer seconds regardless of type:
@@ -110,6 +112,7 @@ def _duration_seconds(series: pd.Series) -> pd.Series:
 
 
 # ---- Tests ----
+
 
 def test_start_and_stop_creates_row_and_duration_nonnegative(
     storage: PostgreCloudStorage,
