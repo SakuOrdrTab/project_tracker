@@ -11,6 +11,7 @@ from src.installer import install_bats_to_cwd
 def main() -> None:
     # Postgres central storage
     storage = PostgreCloudStorage(profile="prod")
+    # or storage = SQLLiteLocalStorage(profile="prod") if you prefer local SQLite
 
     arg_parser = argparse.ArgumentParser(description="Track a project's working hours.")
     # Positional argument: project name

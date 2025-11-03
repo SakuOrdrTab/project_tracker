@@ -1,6 +1,7 @@
 """A Centralized Sqlite3 storage for multiple projects"""
 
 from pathlib import Path
+from typing import Literal
 
 # UTC Timezone is used globally for this module
 from datetime import datetime, timezone
@@ -45,14 +46,19 @@ class SQLiteLocalStorage:
     Store data in a local SQLite3 database file.
     Implemented with SQLAlchemy and SQLite3."""
 
-    def __init__(self, db_url: str | None = None, echo: bool = False) -> None:
+    def __init__(self, profile: Literal["prod", "test"] = "test", echo: bool = False, test_path: Path | None = None) -> None:
         """Constructs a Storage object: SQLite3 local file database"""
         # if no db_url is provided, use default local file,
         # this also allows testing with in-memory database
         # "here" is needed to make sure DB is not created in some random CWD
-        if db_url is None:
+        if profile == "prod":
             here = Path(__file__).resolve().parent
             db_url = f"sqlite:///{here / 'proj_ttrack.db'}"
+        else:
+            if test_path:
+                db_url = f"sqlite:///{test_path / 'test.db'}"
+            else:
+                db_url = "sqlite:///:memory:"
 
         try:
             self.engine = create_engine(db_url, echo=echo)

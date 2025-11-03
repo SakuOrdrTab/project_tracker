@@ -26,9 +26,9 @@ def db_url(tmp_path: Path) -> str:
 
 
 @pytest.fixture()
-def storage(db_url: str) -> SQLiteLocalStorage:
-    """Fresh storage for each test."""
-    return SQLiteLocalStorage(db_url=db_url, echo=False)
+def storage(tmp_path: Path) -> SQLiteLocalStorage:
+    """Fresh storage for each test using temporary SQLite file."""
+    return SQLiteLocalStorage(profile="test", test_path=tmp_path, echo=False)
 
 
 def test_start_and_stop_creates_row_and_duration_nonnegative(storage: SQLiteLocalStorage):
