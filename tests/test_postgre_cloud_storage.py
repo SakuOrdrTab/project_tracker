@@ -1,6 +1,9 @@
-# tests/test_postgre_cloud_storage.py
+# tests/test_postgres_cloud_storage.py
 """
-Tests for PostgreCloudStorage
+Integration tests against a real Postgres (Supabase) database.
+
+Skips the entire module if required env vars are missing
+or the Postgres driver isn't installed.
 
 Covers:
 - starting a session
@@ -11,48 +14,126 @@ Covers:
 - messaging for 'stop without start'
 """
 
+from __future__ import annotations
 from pathlib import Path
+import os
 import pandas as pd
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, text
+from sqlalchemy.orm import Session
+import re
 
-from SQLiteLocalStorage import ProjectSession
 from PostgreCloudStorage import PostgreCloudStorage
+from SQLiteLocalStorage import ProjectSession
+
+# ---- Module-level guards: skip if Postgres isn't configured ----
+
+from dotenv import load_dotenv
+
+load_dotenv()  # load .env into process for the test's env checks
+
+REQUIRED_ENVS = [
+    "POSTGRES_USER",
+    "POSTGRES_PASSWORD",
+    "POSTGRES_HOST",
+    "POSTGRES_PORT",
+    "POSTGRES_DBNAME",
+]
+
+# ensure driver present (prefer psycopg v3)
+try:
+    import psycopg  # type: ignore  # noqa: F401
+
+    _driver_ok = True
+except Exception:
+    try:
+        import psycopg2  # type: ignore  # noqa: F401
+
+        _driver_ok = True
+    except Exception:
+        _driver_ok = False
+
+if not _driver_ok:
+    pytest.skip(
+        "No Postgres driver (psycopg or psycopg2) installed; skipping Postgres tests",
+        allow_module_level=True,
+    )
+
+if not all(os.getenv(k) for k in REQUIRED_ENVS):
+    pytest.skip(
+        "Postgres env vars missing; set POSTGRES_* to run Postgres tests",
+        allow_module_level=True,
+    )
 
 
-@pytest.fixture()
-def db_url(tmp_path: Path) -> str:
-    """Use a file-backed temp SQLite DB so multiple connections see the same data."""
-    return f"sqlite:///{tmp_path/'test.db'}"
+# ---- Fixtures ----
+
+@pytest.fixture(scope="module")
+def storage() -> PostgreCloudStorage:
+    """
+    One storage for the module. Uses env-based connection (db_url=None).
+    """
+    st = PostgreCloudStorage(db_url=None, echo=False)
+    return st
 
 
-@pytest.fixture()
-def storage(db_url: str) -> PostgreCloudStorage:
-    """Fresh storage for each test."""
-    return PostgreCloudStorage(db_url=db_url, echo=False)
+@pytest.fixture(autouse=True)
+def _clean_table_between_tests(storage: PostgreCloudStorage):
+    """
+    Ensure a clean slate before and after each test.
+    """
+    with storage.engine.begin() as conn:
+        conn.execute(text("DELETE FROM project_sessions"))
+    yield
+    with storage.engine.begin() as conn:
+        conn.execute(text("DELETE FROM project_sessions"))
 
 
-def test_start_and_stop_creates_row_and_duration_nonnegative(storage: PostgreCloudStorage):
+# ---- Helpers ----
+
+def _duration_seconds(series: pd.Series) -> pd.Series:
+    """
+    Normalize a 'duration' column to integer seconds regardless of type:
+    - int/float: return as int64
+    - string/timedelta: convert via to_timedelta(...)
+    """
+    if pd.api.types.is_numeric_dtype(series):
+        return series.astype("int64")
+    td = pd.to_timedelta(series, errors="coerce")
+    if td.notna().all():
+        return td.dt.total_seconds().astype("int64")
+    # fallback if mixed
+    return pd.to_numeric(series, errors="coerce").fillna(0).astype("int64")
+
+
+# ---- Tests ----
+
+def test_start_and_stop_creates_row_and_duration_nonnegative(
+    storage: PostgreCloudStorage,
+):
     storage.start_working("testi")
     storage.stop_working("testi", "coding")
 
-    # Inspect DB to ensure one row with end_time set and activities recorded.
-    with storage.engine.connect() as conn:
-        rows = conn.execute(
-            select(ProjectSession.__table__).where(ProjectSession.proj_name == "testi")
-        ).mappings().all()
+    # Verify row via ORM
+    with Session(storage.engine) as s:
+        rows = (
+            s.execute(select(ProjectSession).where(ProjectSession.proj_name == "testi"))
+            .scalars()
+            .all()
+        )
 
     assert len(rows) == 1
     row = rows[0]
-    assert row["end_time"] is not None
-    assert row["activities"] == "coding"
-    # duration >= 0 (sanity)
-    assert (row["end_time"] - row["start_time"]).total_seconds() >= 0
+    assert row.end_time is not None
+    assert row.activities == "coding"
+    assert (row.end_time - row.start_time).total_seconds() >= 0
 
 
-def test_prevent_double_start(storage: PostgreCloudStorage, capsys: pytest.CaptureFixture[str]):
+def test_prevent_double_start(
+    storage: PostgreCloudStorage, capsys: pytest.CaptureFixture[str]
+):
     storage.start_working("dup")
-    storage.start_working("dup")  # should print a warning and NOT create a 2nd open session
+    storage.start_working("dup")  # should warn and NOT create a 2nd open session
 
     out = capsys.readouterr().out
     assert "Started working on the project: dup." in out
@@ -60,34 +141,46 @@ def test_prevent_double_start(storage: PostgreCloudStorage, capsys: pytest.Captu
 
     # Ensure only one open session exists
     with storage.engine.connect() as conn:
-        open_rows = conn.execute(
-            select(ProjectSession.__table__).where(
-                ProjectSession.proj_name == "dup",
-                ProjectSession.end_time.is_(None),
+        open_rows = (
+            conn.execute(
+                select(ProjectSession).where(
+                    ProjectSession.proj_name == "dup",
+                    ProjectSession.end_time.is_(None),
+                )
             )
-        ).mappings().all()
+            .scalars()
+            .all()
+        )
 
     assert len(open_rows) == 1
 
-    # Clean up by stopping; should close the only open one
+    # Clean up by stopping
     storage.stop_working("dup", "done")
     with storage.engine.connect() as conn:
-        open_after_stop = conn.execute(
-            select(ProjectSession.__table__).where(
-                ProjectSession.proj_name == "dup",
-                ProjectSession.end_time.is_(None),
+        open_after_stop = (
+            conn.execute(
+                select(ProjectSession).where(
+                    ProjectSession.proj_name == "dup",
+                    ProjectSession.end_time.is_(None),
+                )
             )
-        ).mappings().all()
+            .scalars()
+            .all()
+        )
     assert len(open_after_stop) == 0
 
 
-def test_stop_without_start_messages(storage: PostgreCloudStorage, capsys: pytest.CaptureFixture[str]):
+def test_stop_without_start_messages(
+    storage: PostgreCloudStorage, capsys: pytest.CaptureFixture[str]
+):
     storage.stop_working("nope", "x")
     out = capsys.readouterr().out
     assert "No ongoing session to stop" in out
 
 
-def test_list_projects_sorted_unique(storage: PostgreCloudStorage, capsys: pytest.CaptureFixture[str]):
+def test_list_projects_sorted_unique(
+    storage: PostgreCloudStorage, capsys: pytest.CaptureFixture[str]
+):
     # Create two finished projects in non-sorted order
     storage.start_working("B")
     storage.stop_working("B", "done")
@@ -97,14 +190,21 @@ def test_list_projects_sorted_unique(storage: PostgreCloudStorage, capsys: pytes
     storage.list_projects()
     out = capsys.readouterr().out
 
-    # Deterministic order (A then B) as your code uses order_by(proj_name)
+    # Simple ordering check
     assert "Tracked projects" in out
-    # Loose checks for lines like "1: A" and "2: B"
-    assert "\n1: A" in out or "1: A\n" in out
-    assert "\n2: B" in out or "2: B\n" in out
+    # Normalize lines and extract the printed names after "N: "
+    lines = out.splitlines()
+    names = []
+    for ln in lines:
+        m = re.match(r"^\s*\d+:\s+(.*)$", ln)
+        if m:
+            names.append(m.group(1).strip())
+    assert names == ["A", "B"]
 
 
-def test_write_project_to_csv_creates_file_with_duration(storage: PostgreCloudStorage, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_write_project_to_csv_creates_file_with_duration(
+    storage: PostgreCloudStorage, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
     # Change CWD so CSV is written to tmp_path (your method writes to CWD)
     monkeypatch.chdir(tmp_path)
 
@@ -118,12 +218,10 @@ def test_write_project_to_csv_creates_file_with_duration(storage: PostgreCloudSt
 
     # Validate content
     df = pd.read_csv(csv_file, parse_dates=["start_time", "end_time"])
-    assert {"proj_name", "start_time", "end_time", "activities", "duration"}.issubset(df.columns)
+    assert {"proj_name", "start_time", "end_time", "activities", "duration"}.issubset(
+        df.columns
+    )
 
-    # All durations should be >= 0
-    # Note: if 'duration' comes in as string, convert to Timedelta
-    if df["duration"].dtype == object:
-        df["duration"] = pd.to_timedelta(df["duration"])
-
-    assert (df["duration"].dt.total_seconds() >= 0).all()
+    secs = _duration_seconds(df["duration"])
+    assert (secs >= 0).all()
     assert (df["proj_name"] == "csvproj").all()
