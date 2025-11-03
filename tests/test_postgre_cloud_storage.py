@@ -34,9 +34,7 @@ load_dotenv()  # load .env into process for the test's env checks
 
 # You have to have a separate project in supaabase for tests!
 # Otherwise the test destroy your database
-REQUIRED_ENVS = [
-    "TEST_POSTGRES_URL"
-]
+REQUIRED_ENVS = ["TEST_POSTGRES_URL"]
 
 # ensure driver present (prefer psycopg v3)
 try:

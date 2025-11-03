@@ -22,7 +22,7 @@ from SQLiteLocalStorage import SQLiteLocalStorage, ProjectSession
 @pytest.fixture()
 def db_url(tmp_path: Path) -> str:
     """Use a file-backed temp SQLite DB so multiple connections see the same data."""
-    return f"sqlite:///{tmp_path/'test.db'}"
+    return f"sqlite:///{tmp_path / 'test.db'}"
 
 
 @pytest.fixture()
@@ -31,15 +31,23 @@ def storage(tmp_path: Path) -> SQLiteLocalStorage:
     return SQLiteLocalStorage(profile="test", test_path=tmp_path, echo=False)
 
 
-def test_start_and_stop_creates_row_and_duration_nonnegative(storage: SQLiteLocalStorage):
+def test_start_and_stop_creates_row_and_duration_nonnegative(
+    storage: SQLiteLocalStorage,
+):
     storage.start_working("testi")
     storage.stop_working("testi", "coding")
 
     # Inspect DB to ensure one row with end_time set and activities recorded.
     with storage.engine.connect() as conn:
-        rows = conn.execute(
-            select(ProjectSession.__table__).where(ProjectSession.proj_name == "testi")
-        ).mappings().all()
+        rows = (
+            conn.execute(
+                select(ProjectSession.__table__).where(
+                    ProjectSession.proj_name == "testi"
+                )
+            )
+            .mappings()
+            .all()
+        )
 
     assert len(rows) == 1
     row = rows[0]
@@ -49,9 +57,13 @@ def test_start_and_stop_creates_row_and_duration_nonnegative(storage: SQLiteLoca
     assert (row["end_time"] - row["start_time"]).total_seconds() >= 0
 
 
-def test_prevent_double_start(storage: SQLiteLocalStorage, capsys: pytest.CaptureFixture[str]):
+def test_prevent_double_start(
+    storage: SQLiteLocalStorage, capsys: pytest.CaptureFixture[str]
+):
     storage.start_working("dup")
-    storage.start_working("dup")  # should print a warning and NOT create a 2nd open session
+    storage.start_working(
+        "dup"
+    )  # should print a warning and NOT create a 2nd open session
 
     out = capsys.readouterr().out
     assert "Started working on the project: dup." in out
@@ -59,34 +71,46 @@ def test_prevent_double_start(storage: SQLiteLocalStorage, capsys: pytest.Captur
 
     # Ensure only one open session exists
     with storage.engine.connect() as conn:
-        open_rows = conn.execute(
-            select(ProjectSession.__table__).where(
-                ProjectSession.proj_name == "dup",
-                ProjectSession.end_time.is_(None),
+        open_rows = (
+            conn.execute(
+                select(ProjectSession.__table__).where(
+                    ProjectSession.proj_name == "dup",
+                    ProjectSession.end_time.is_(None),
+                )
             )
-        ).mappings().all()
+            .mappings()
+            .all()
+        )
 
     assert len(open_rows) == 1
 
     # Clean up by stopping; should close the only open one
     storage.stop_working("dup", "done")
     with storage.engine.connect() as conn:
-        open_after_stop = conn.execute(
-            select(ProjectSession.__table__).where(
-                ProjectSession.proj_name == "dup",
-                ProjectSession.end_time.is_(None),
+        open_after_stop = (
+            conn.execute(
+                select(ProjectSession.__table__).where(
+                    ProjectSession.proj_name == "dup",
+                    ProjectSession.end_time.is_(None),
+                )
             )
-        ).mappings().all()
+            .mappings()
+            .all()
+        )
     assert len(open_after_stop) == 0
 
 
-def test_stop_without_start_messages(storage: SQLiteLocalStorage, capsys: pytest.CaptureFixture[str]):
+def test_stop_without_start_messages(
+    storage: SQLiteLocalStorage, capsys: pytest.CaptureFixture[str]
+):
     storage.stop_working("nope", "x")
     out = capsys.readouterr().out
     assert "No ongoing session to stop" in out
 
 
-def test_list_projects_sorted_unique(storage: SQLiteLocalStorage, capsys: pytest.CaptureFixture[str]):
+def test_list_projects_sorted_unique(
+    storage: SQLiteLocalStorage, capsys: pytest.CaptureFixture[str]
+):
     # Create two finished projects in non-sorted order
     storage.start_working("B")
     storage.stop_working("B", "done")
@@ -103,7 +127,9 @@ def test_list_projects_sorted_unique(storage: SQLiteLocalStorage, capsys: pytest
     assert "\n2: B" in out or "2: B\n" in out
 
 
-def test_write_project_to_csv_creates_file_with_duration(storage: SQLiteLocalStorage, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_write_project_to_csv_creates_file_with_duration(
+    storage: SQLiteLocalStorage, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
     # Change CWD so CSV is written to tmp_path (your method writes to CWD)
     monkeypatch.chdir(tmp_path)
 
@@ -117,7 +143,9 @@ def test_write_project_to_csv_creates_file_with_duration(storage: SQLiteLocalSto
 
     # Validate content
     df = pd.read_csv(csv_file, parse_dates=["start_time", "end_time"])
-    assert {"proj_name", "start_time", "end_time", "activities", "duration"}.issubset(df.columns)
+    assert {"proj_name", "start_time", "end_time", "activities", "duration"}.issubset(
+        df.columns
+    )
 
     # All durations should be >= 0
     # Note: if 'duration' comes in as string, convert to Timedelta

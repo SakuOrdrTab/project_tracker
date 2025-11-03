@@ -17,11 +17,12 @@ class PostgreCloudStorage(SQLiteLocalStorage):
     interactions, only the initialization process is different - all else is inherited
     from the SQLiteLocalStorage class"""
 
-    def __init__(self, profile: Literal["prod", "test"] = "test", echo: bool = False) -> None:
+    def __init__(
+        self, profile: Literal["prod", "test"] = "test", echo: bool = False
+    ) -> None:
         load_dotenv()
         env_key = "POSTGRES_URL" if profile == "prod" else "TEST_POSTGRES_URL"
         db_url = os.getenv(env_key, "").strip()
-        print("db_url:", db_url)
 
         if not db_url:
             raise RuntimeError(

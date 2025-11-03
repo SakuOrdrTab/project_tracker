@@ -21,12 +21,17 @@ The default database is currently the Supabase PostgreSQL database in the cloud;
 
 To be able to use the Supabase, you must of course create a (free) account there and obtain passwords, username, url etc. The `PostgreCloudStorage` class loads these variables from the environment. Set a `.env` file on accordance to the `.env.example`:
 ```
-POSTGRES_USER=
-POSTGRES_PASSWORD=
-POSTGRES_HOST=
-POSTGRES_PORT=
-POSTGRES_DBNAME=postgres
+POSTGRES_URL=
+TEST_POSTGRES_URL=
 ```
+
+I strongly encourage to create a different project in Supabase for testing, if you want to try the tests. Currently the test skip Supabase/Postgres tests, if no TEST_POSTGRES_URL is provided.
+
+<b>WARNING:</b> If you set your production POSTGRES_URL to TEST_POSTGRES_URL, the <b> tests will erase your production database when run!</b>
+
+To use Supabase ipV4 compliant <i>Session pooler</i> database, the POSTGRES_URL is in the style:<br>
+`postgresql://{username}:{password}@{host}:{port}/{database}`
+
 
 ## Usage
 

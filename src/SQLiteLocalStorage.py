@@ -46,7 +46,12 @@ class SQLiteLocalStorage:
     Store data in a local SQLite3 database file.
     Implemented with SQLAlchemy and SQLite3."""
 
-    def __init__(self, profile: Literal["prod", "test"] = "test", echo: bool = False, test_path: Path | None = None) -> None:
+    def __init__(
+        self,
+        profile: Literal["prod", "test"] = "test",
+        echo: bool = False,
+        test_path: Path | None = None,
+    ) -> None:
         """Constructs a Storage object: SQLite3 local file database"""
         # if no db_url is provided, use default local file,
         # this also allows testing with in-memory database
