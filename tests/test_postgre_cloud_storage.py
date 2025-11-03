@@ -32,12 +32,14 @@ from dotenv import load_dotenv
 
 load_dotenv()  # load .env into process for the test's env checks
 
+# You have to have a separate project in supaabase for tests!
+# Otherwise the test destroy your daatabase
 REQUIRED_ENVS = [
-    "POSTGRES_USER",
-    "POSTGRES_PASSWORD",
-    "POSTGRES_HOST",
-    "POSTGRES_PORT",
-    "POSTGRES_DBNAME",
+    "TEST_POSTGRES_USER",
+    "TEST_POSTGRES_PASSWORD",
+    "TEST_POSTGRES_HOST",
+    "TEST_POSTGRES_PORT",
+    "TEST_POSTGRES_DBNAME",
 ]
 
 # ensure driver present (prefer psycopg v3)
@@ -73,7 +75,8 @@ def storage() -> PostgreCloudStorage:
     """
     One storage for the module. Uses env-based connection (db_url=None).
     """
-    st = PostgreCloudStorage(db_url=None, echo=False)
+    # Do not leave db_url empty: it WILL ruin your prod database
+    st = PostgreCloudStorage(db_url="test", echo=False)
     return st
 
 
