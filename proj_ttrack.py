@@ -1,7 +1,7 @@
 import sys
 import argparse
-from dotenv import load_dotenv
-import os
+# from dotenv import load_dotenv
+# import os
 
 # from src.SQLiteLocalStorage import SQLiteLocalStorage
 from src.PostgreCloudStorage import PostgreCloudStorage
@@ -9,13 +9,7 @@ from src.installer import install_bats_to_cwd
 
 
 def main() -> None:
-    # Test environment variables are available through settings.py
-    load_dotenv()
-    TEST = os.environ.get("TEST")
-    if TEST:
-        print(f"TEST environment variable is set to: {TEST}")
-
-    # Sqlite3 central storage
+    # Postgres central storage
     storage = PostgreCloudStorage()
 
     arg_parser = argparse.ArgumentParser(description="Track a project's working hours.")
