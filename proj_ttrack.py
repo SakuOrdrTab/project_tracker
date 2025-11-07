@@ -32,11 +32,17 @@ def main() -> None:
         default=None,
         help="Stop a working period and provide a description (optional)",
     )
-    # Optional argument: print project time usage to .csv
+    # Optional argument: export project time usage to .csv
     arg_parser.add_argument(
         "-export",
         action="store_true",
         help="Write project time usage to .csv (current working directory)",
+    )
+    # Optional argument: print project time usage
+    arg_parser.add_argument(
+        "-print",
+        action="store_true",
+        help="Print project time usage",
     )
     # Optional argument: list all tracked projects
     arg_parser.add_argument(
@@ -70,6 +76,8 @@ def main() -> None:
         storage.stop_working(proj_name=args.projectname, activities=description)
     elif args.start:
         storage.start_working(proj_name=args.projectname)
+    elif args.print:
+        storage.print_project(proj_name=args.projectname)
     elif args.export:
         storage.write_project_to_csv(proj_name=args.projectname)
     elif args.install:

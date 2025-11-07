@@ -41,7 +41,8 @@ This script is designed to be used from a command prompt. After you have added t
 
 <I>'<project_name> -start'</I> Sets a starting time for a project work session. Run this when you start coding<BR>
 <I>'<project_name> -stop <optional_text>'</I>  Sets the closing time, use when you stop coding. if optional text is empty, it asks for what you did durring the session<BR>
-<I>'<project_name> -export'</I> Prints your sessions to a `.csv`-file<BR>
+<I>'<project_name> -export'</I> exports your sessions to a `.csv`-file<BR>
+<I>'<project_name> -print'</I> Prints your sessions in a project<BR>
 <I>'-list'</I> Lists all tracked projects in database<BR>
 <I>'-install'</I> Adds two windows batch files, start_track.bat and stop_track.bat to your current working directory. I suggest that as your proj_ttrack is in your PATH, you run this in your new project where you want to track time sessions. Running the bats eases you from typing the project name every time.<BR>
 

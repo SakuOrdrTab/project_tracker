@@ -144,8 +144,15 @@ class SQLiteLocalStorage:
             print(f"An unexpected error occurred ({e})")
             raise RuntimeError("Unexpected error stopping project session") from e
 
-    def write_project_to_csv(self, proj_name: str) -> None:
-        """Writes project's time usage in a .csv file"""
+    def print_project(self, proj_name: str) -> pd.DataFrame:
+        """Prints project's time usage
+
+        Args:
+            proj_name (str): the project name
+
+        Returns:
+            pd.DataFrame: Pandas dataframe containing the project entries
+        """        
         def time_delta_to_str(td: pd.Timedelta) -> str:
             """helper func: Convert pandas Timedelta to string format"""
             seconds_total = int(td.total_seconds())
@@ -182,7 +189,7 @@ class SQLiteLocalStorage:
 
         if df.empty:
             print(f"No sessions found for project '{proj_name}'.")
-            return
+            return df
 
         # Safe, consistent dtypes
         df["start_time"] = pd.to_datetime(df["start_time"], utc=True, errors="coerce")
@@ -191,11 +198,21 @@ class SQLiteLocalStorage:
 
         print(df)
         print(f"Total time spent on project '{proj_name}': {time_delta_to_str(df['duration'].sum())}")
+
+        return df
+        
+
+    def write_project_to_csv(self, proj_name: str) -> None:
+        """Writes project's time usage in a .csv file"""
+        # print project
+        df = self.print_project(proj_name)
+
         try:
             df.to_csv(f"{proj_name}_time_tracker.csv", index=False)
         except Exception as e:
             print(f"Could not write to .csv file ({e})")
             raise RuntimeError("Error writing CSV file") from e
+
 
     def list_projects(self) -> None:
         """Lists all projects being tracked"""
