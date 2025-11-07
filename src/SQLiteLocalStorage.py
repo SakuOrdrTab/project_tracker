@@ -146,6 +146,24 @@ class SQLiteLocalStorage:
 
     def write_project_to_csv(self, proj_name: str) -> None:
         """Writes project's time usage in a .csv file"""
+        def time_delta_to_str(td: pd.Timedelta) -> str:
+            """helper func: Convert pandas Timedelta to string format"""
+            seconds_total = int(td.total_seconds())
+            days = seconds_total // (24 * 3600)
+            seconds_total %= (24 * 3600)
+            hours = seconds_total // 3600
+            seconds_total %= 3600
+            minutes = seconds_total // 60
+            seconds = seconds_total % 60
+            result = ""
+            if days > 0:
+                result += f"{days} days, "
+            if hours > 0:
+                result += f"{hours:02} hours, "
+            if minutes > 0:
+                result += f"{minutes:02} minutes, "
+            result += f"{seconds:02} seconds"
+            return result
         try:
             # Select all entries ORM style
             stmt = select(ProjectSession.__table__).where(
@@ -172,6 +190,7 @@ class SQLiteLocalStorage:
         df["duration"] = df["end_time"] - df["start_time"]
 
         print(df)
+        print(f"Total time spent on project '{proj_name}': {time_delta_to_str(df['duration'].sum())}")
         try:
             df.to_csv(f"{proj_name}_time_tracker.csv", index=False)
         except Exception as e:
