@@ -7,13 +7,26 @@ import argparse
 from src.PostgreCloudStorage import PostgreCloudStorage
 from src.installer import install_bats_to_cwd
 
+def add_arguments(arg_parser : argparse.ArgumentParser) -> None:
+    pass
+
+def handle_storage_tasks(args : argparse.Namespace) -> None:
+    pass
+
 
 def main() -> None:
     # Postgres central storage
     storage = PostgreCloudStorage(profile="prod")
     # or storage = SQLLiteLocalStorage(profile="prod") if you prefer local SQLite
 
+    # TODO:
+    # Storage is initialized only when needed, not with -help, error etc.
+
     arg_parser = argparse.ArgumentParser(description="Track a project's working hours.")
+
+    # TODO:
+    # Wrap adding arguments and if switch to a function for clarity
+
     # Positional argument: project name
     arg_parser.add_argument(
         "projectname",
@@ -62,11 +75,19 @@ def main() -> None:
         print("Please provide a project name as the first argument.")
         sys.exit(1)
 
+    # Do the stuff possible without storage:
+    # - help
+    # - error
+    # - install
+
     # Handle listing projects...
     if args.list:
         storage.list_projects()
+        
     # ...or project specific tasks
     elif args.stop is not None:
+        # TODO:
+        # Only -stop if there is a project running (add Storage.project_exists(project_name))
         description = (
             " ".join(args.stop)
             if args.stop
@@ -81,9 +102,9 @@ def main() -> None:
     elif args.export:
         storage.write_project_to_csv(proj_name=args.projectname)
     elif args.install:
-        install_bats_to_cwd()
+        install_bats_to_cwd() # No storage init needed
     else:
-        arg_parser.print_help()  # No valid arguments, print help
+        arg_parser.print_help()  # No valid arguments, print help, no storage init needed
 
 
 if __name__ == "__main__":
