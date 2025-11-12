@@ -58,7 +58,7 @@ def handle_tasks(args : argparse.Namespace) -> None:
 
     Args:
         args (argparse.Namespace): CLI arguments
-    """    
+    """
     # early return not initializing storage if installing
     if args.install:
         install_bats_to_cwd() # No storage init needed
