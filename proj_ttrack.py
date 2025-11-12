@@ -98,7 +98,6 @@ def handle_storage_tasks(args : argparse.Namespace) -> None:
         storage.print_project(proj_name=args.projectname)
     elif args.export:
         storage.write_project_to_csv(proj_name=args.projectname)
-    print("This should not run")
 
 
 def main() -> None:
