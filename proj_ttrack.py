@@ -60,10 +60,15 @@ def handle_tasks(args : argparse.Namespace) -> None:
     
     handle_storage_tasks(args)
 
+def get_storage() -> PostgreCloudStorage:
+    # Postgres central storage, production type
+    storage = PostgreCloudStorage(profile="prod")
+    # or storage = SQLLiteLocalStorage(profile="prod") if you prefer local SQLite
+    return storage
 
 def handle_storage_tasks(args : argparse.Namespace) -> None:
     # Postgres central storage
-    storage = PostgreCloudStorage(profile="prod")
+    storage = get_storage()
     # or storage = SQLLiteLocalStorage(profile="prod") if you prefer local SQLite
 
     # project specific tasks
@@ -85,6 +90,7 @@ def handle_storage_tasks(args : argparse.Namespace) -> None:
         storage.write_project_to_csv(proj_name=args.projectname)
     else:
         arg_parser.print_help()  # No valid arguments, print help, no storage init needed
+
 
 def main() -> None:
     arg_parser = argparse.ArgumentParser(description="Track a project's working hours.")
