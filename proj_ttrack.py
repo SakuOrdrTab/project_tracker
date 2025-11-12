@@ -53,6 +53,12 @@ def add_arguments(arg_parser : argparse.ArgumentParser) -> None:
     )
 
 def handle_tasks(args : argparse.Namespace) -> None:
+    """Handles all tasks defined by args; early return for those not requiring a storage
+    which is not initialized
+
+    Args:
+        args (argparse.Namespace): CLI arguments
+    """    
     # early return not initializing storage if installing
     if args.install:
         install_bats_to_cwd() # No storage init needed
@@ -61,6 +67,11 @@ def handle_tasks(args : argparse.Namespace) -> None:
     handle_storage_tasks(args)
 
 def handle_storage_tasks(args : argparse.Namespace) -> None:
+    """Handles all tasks defined by args that require a storage which is initialized
+
+    Args:
+        args (argparse.Namespace): CLI arguments
+    """    
     # Postgres central storage
     storage = PostgreCloudStorage()
     # or storage = SQLLiteLocalStorage(profile="prod") if you prefer local SQLite
@@ -86,6 +97,8 @@ def handle_storage_tasks(args : argparse.Namespace) -> None:
 
 
 def main() -> None:
+    """Main program loop
+    """    
     arg_parser = argparse.ArgumentParser(description="Track a project's working hours.")
 
     add_arguments(arg_parser=arg_parser)
