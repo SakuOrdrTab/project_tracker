@@ -1,32 +1,16 @@
 import sys
 import argparse
-# from dotenv import load_dotenv
-# import os
 
 # from src.SQLiteLocalStorage import SQLiteLocalStorage
 from src.PostgreCloudStorage import PostgreCloudStorage
 from src.installer import install_bats_to_cwd
 
 def add_arguments(arg_parser : argparse.ArgumentParser) -> None:
-    pass
+    """Mutates arg_parser to have the app's different arguments.
 
-def handle_storage_tasks(args : argparse.Namespace) -> None:
-    pass
-
-
-def main() -> None:
-    # Postgres central storage
-    storage = PostgreCloudStorage(profile="prod")
-    # or storage = SQLLiteLocalStorage(profile="prod") if you prefer local SQLite
-
-    # TODO:
-    # Storage is initialized only when needed, not with -help, error etc.
-
-    arg_parser = argparse.ArgumentParser(description="Track a project's working hours.")
-
-    # TODO:
-    # Wrap adding arguments and if switch to a function for clarity
-
+    Args:
+        arg_parser (argparse.ArgumentParser): arg_parser to be defined
+    """
     # Positional argument: project name
     arg_parser.add_argument(
         "projectname",
@@ -68,24 +52,37 @@ def main() -> None:
         help="Install batch files for current working directory to start and stop a session",
     )
 
-    args = arg_parser.parse_args()
+def handle_tasks(args : argparse.Namespace) -> None:
+    """Handles all tasks defined by args; early return for those not requiring a storage
+    which is not initialized
 
-    # Validate that project name is provided if not listing projects or installing
-    if args.projectname is None and not args.list and not args.install:
-        print("Please provide a project name as the first argument.")
-        sys.exit(1)
+    Args:
+        args (argparse.Namespace): CLI arguments
+    """
+    # early return not initializing storage if installing
+    if args.install:
+        install_bats_to_cwd() # No storage init needed
+        return
+    
+    handle_storage_tasks(args)
 
-    # Do the stuff possible without storage:
-    # - help
-    # - error
-    # - install
+def handle_storage_tasks(args : argparse.Namespace) -> None:
+    """Handles all tasks defined by args that require a storage which is initialized
 
-    # Handle listing projects...
+    Args:
+        args (argparse.Namespace): CLI arguments
+    """
+    # Postgres central storage
+    storage = PostgreCloudStorage(profile="prod")
+    # or storage = SQLLiteLocalStorage(profile="prod") if you prefer local SQLite
+
+    # Check for non-project specific tasks first
     if args.list:
         storage.list_projects()
-        
-    # ...or project specific tasks
-    elif args.stop is not None:
+        return
+
+    # project specific tasks
+    if args.stop is not None:
         # TODO:
         # Only -stop if there is a project running (add Storage.project_exists(project_name))
         description = (
@@ -101,10 +98,29 @@ def main() -> None:
         storage.print_project(proj_name=args.projectname)
     elif args.export:
         storage.write_project_to_csv(proj_name=args.projectname)
-    elif args.install:
-        install_bats_to_cwd() # No storage init needed
-    else:
-        arg_parser.print_help()  # No valid arguments, print help, no storage init needed
+
+
+def main() -> None:
+    """Main program loop
+    """
+    arg_parser = argparse.ArgumentParser(description="Track a project's working hours.")
+
+    add_arguments(arg_parser=arg_parser)
+
+    args = arg_parser.parse_args()
+
+    # Check for print help condition
+    if (args.projectname is None and args.stop is None and not args.start 
+        and not args.export and not args.print and not args.list and not args.install):
+        arg_parser.print_help()
+        sys.exit(0) # Exit after printing help
+
+    # Check for missing project name when required
+    if args.projectname is None and not args.list and not args.install:
+        print("Please provide a project name as the first argument.")
+        sys.exit(1)
+
+    handle_tasks(args)
 
 
 if __name__ == "__main__":
