@@ -102,7 +102,7 @@ def handle_storage_tasks(args : argparse.Namespace) -> None:
 
 def main() -> None:
     """Main program loop
-    """    
+    """
     arg_parser = argparse.ArgumentParser(description="Track a project's working hours.")
 
     add_arguments(arg_parser=arg_parser)
