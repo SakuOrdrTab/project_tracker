@@ -88,8 +88,7 @@ def handle_storage_tasks(args : argparse.Namespace) -> None:
         storage.print_project(proj_name=args.projectname)
     elif args.export:
         storage.write_project_to_csv(proj_name=args.projectname)
-    else:
-        arg_parser.print_help()  # No valid arguments, print help, no storage init needed
+    print("This should not run")
 
 
 def main() -> None:
@@ -99,7 +98,14 @@ def main() -> None:
 
     args = arg_parser.parse_args()
 
-    # Validate that project name is provided if not listing projects or installing
+    # Check for print help condition
+    if (args.projectname is None and args.stop is None and not args.start 
+        and not args.export and not args.print and not args.list and not args.install):
+        
+        arg_parser.print_help()
+        sys.exit(0) # Exit after printing help
+
+    # Check for missing project name when required
     if args.projectname is None and not args.list and not args.install:
         print("Please provide a project name as the first argument.")
         sys.exit(1)
