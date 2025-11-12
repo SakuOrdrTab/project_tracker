@@ -8,25 +8,11 @@ from src.PostgreCloudStorage import PostgreCloudStorage
 from src.installer import install_bats_to_cwd
 
 def add_arguments(arg_parser : argparse.ArgumentParser) -> None:
-    pass
+    """Mutates arg_parser to have the app's different arguments.
 
-def handle_storage_tasks(args : argparse.Namespace) -> None:
-    pass
-
-
-def main() -> None:
-    # Postgres central storage
-    storage = PostgreCloudStorage(profile="prod")
-    # or storage = SQLLiteLocalStorage(profile="prod") if you prefer local SQLite
-
-    # TODO:
-    # Storage is initialized only when needed, not with -help, error etc.
-
-    arg_parser = argparse.ArgumentParser(description="Track a project's working hours.")
-
-    # TODO:
-    # Wrap adding arguments and if switch to a function for clarity
-
+    Args:
+        arg_parser (argparse.ArgumentParser): arg_parser to be defined
+    """    
     # Positional argument: project name
     arg_parser.add_argument(
         "projectname",
@@ -67,6 +53,25 @@ def main() -> None:
         action="store_true",
         help="Install batch files for current working directory to start and stop a session",
     )
+
+def handle_storage_tasks(args : argparse.Namespace) -> None:
+    pass
+
+
+def main() -> None:
+    # Postgres central storage
+    storage = PostgreCloudStorage(profile="prod")
+    # or storage = SQLLiteLocalStorage(profile="prod") if you prefer local SQLite
+
+    # TODO:
+    # Storage is initialized only when needed, not with -help, error etc.
+
+    arg_parser = argparse.ArgumentParser(description="Track a project's working hours.")
+
+    # TODO:
+    # Wrap adding arguments and if switch to a function for clarity
+
+    add_arguments(arg_parser=arg_parser)
 
     args = arg_parser.parse_args()
 
