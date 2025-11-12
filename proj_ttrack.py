@@ -71,7 +71,7 @@ def handle_storage_tasks(args : argparse.Namespace) -> None:
 
     Args:
         args (argparse.Namespace): CLI arguments
-    """    
+    """
     # Postgres central storage
     storage = PostgreCloudStorage(profile="prod")
     # or storage = SQLLiteLocalStorage(profile="prod") if you prefer local SQLite
