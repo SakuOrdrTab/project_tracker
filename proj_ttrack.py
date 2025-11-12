@@ -112,7 +112,6 @@ def main() -> None:
     # Check for print help condition
     if (args.projectname is None and args.stop is None and not args.start 
         and not args.export and not args.print and not args.list and not args.install):
-        
         arg_parser.print_help()
         sys.exit(0) # Exit after printing help
 
