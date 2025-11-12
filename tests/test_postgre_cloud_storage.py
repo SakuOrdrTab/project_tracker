@@ -224,3 +224,18 @@ def test_write_project_to_csv_creates_file_with_duration(
     secs = _duration_seconds(df["duration"])
     assert (secs >= 0).all()
     assert (df["proj_name"] == "csvproj").all()
+
+def test_non_existing_project_returns_false(
+    storage: PostgreCloudStorage, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    assert not storage.project_exists("nonexistent")
+
+def test_existing_project_returns_true(
+    storage: PostgreCloudStorage, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    storage.start_working("existent")
+    # a non-finished project counts as existing
+    assert storage.project_exists("existent")
+    # finished project also counts
+    storage.stop_working("existent", "done")
+    assert storage.project_exists("existent")

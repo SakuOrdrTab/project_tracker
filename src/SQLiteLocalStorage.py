@@ -238,6 +238,35 @@ class SQLiteLocalStorage:
         for i, project in enumerate(project_names):
             print(f"{i + 1}: {project}")
 
+    def project_exists(self, proj_name: str) -> bool:
+        """Checks if a project with given name exists in the database
+
+        Args:
+            proj_name (str): the project name
+
+        Returns:
+            bool: True if project exists, False otherwise
+        """
+        try:
+            with Session(self.engine) as db_session:
+                exists = (
+                    db_session.execute(
+                        select(ProjectSession)
+                        .where(ProjectSession.proj_name == proj_name)
+                        .limit(1)
+                    )
+                    .scalars()
+                    .first()
+                    is not None
+                )
+                return exists
+        except SQLAlchemyError as e:
+            print(f"Encountered DB error: {e}")
+            raise RuntimeError("Database error checking project existence") from e
+        except Exception as e:
+            print(f"An unexpected error occurred ({e})")
+            raise RuntimeError("Unexpected error checking project existence") from e
+
 
 if __name__ == "__main__":
     print(f"SQLAlchemy version:  {__version__}")
