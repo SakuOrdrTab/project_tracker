@@ -60,15 +60,9 @@ def handle_tasks(args : argparse.Namespace) -> None:
     
     handle_storage_tasks(args)
 
-def get_storage() -> PostgreCloudStorage:
-    # Postgres central storage, production type
-    storage = PostgreCloudStorage(profile="prod")
-    # or storage = SQLLiteLocalStorage(profile="prod") if you prefer local SQLite
-    return storage
-
 def handle_storage_tasks(args : argparse.Namespace) -> None:
     # Postgres central storage
-    storage = get_storage()
+    storage = PostgreCloudStorage()
     # or storage = SQLLiteLocalStorage(profile="prod") if you prefer local SQLite
 
     # project specific tasks
