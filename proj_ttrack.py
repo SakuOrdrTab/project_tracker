@@ -73,8 +73,13 @@ def handle_storage_tasks(args : argparse.Namespace) -> None:
         args (argparse.Namespace): CLI arguments
     """    
     # Postgres central storage
-    storage = PostgreCloudStorage()
+    storage = PostgreCloudStorage(profile="prod")
     # or storage = SQLLiteLocalStorage(profile="prod") if you prefer local SQLite
+
+    # Check for non-project specific tasks first
+    if args.list:
+        storage.list_projects()
+        return
 
     # project specific tasks
     if args.stop is not None:
