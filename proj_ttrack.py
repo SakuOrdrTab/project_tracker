@@ -10,7 +10,7 @@ def add_arguments(arg_parser : argparse.ArgumentParser) -> None:
 
     Args:
         arg_parser (argparse.ArgumentParser): arg_parser to be defined
-    """    
+    """
     # Positional argument: project name
     arg_parser.add_argument(
         "projectname",
