@@ -99,7 +99,7 @@ class SQLiteLocalStorage:
                     proj_name=proj_name, start_time=datetime.now(timezone.utc)
                 )
                 db_session.add(new_session)
-                print(f"Started working on the project: {proj_name}.")
+                print(f"Started working on the project {proj_name}.")
         except SQLAlchemyError as e:
             print(f"Encountered DB error: {e}")
             raise RuntimeError("Database error starting project session") from e
@@ -135,7 +135,7 @@ class SQLiteLocalStorage:
                 ongoing_session.activities = activities
 
                 print(
-                    f"Stopped working on the project: {proj_name} and recorded activities."
+                    f"Stopped working on the project {proj_name} and recorded activities."
                 )
         except SQLAlchemyError as e:
             print(f"Encountered DB error: {e}")
@@ -152,12 +152,13 @@ class SQLiteLocalStorage:
 
         Returns:
             pd.DataFrame: Pandas dataframe containing the project entries
-        """        
+        """
+
         def time_delta_to_str(td: pd.Timedelta) -> str:
             """helper func: Convert pandas Timedelta to string format"""
             seconds_total = int(td.total_seconds())
             days = seconds_total // (24 * 3600)
-            seconds_total %= (24 * 3600)
+            seconds_total %= 24 * 3600
             hours = seconds_total // 3600
             seconds_total %= 3600
             minutes = seconds_total // 60
@@ -171,6 +172,7 @@ class SQLiteLocalStorage:
                 result += f"{minutes:02} minutes, "
             result += f"{seconds:02} seconds"
             return result
+
         try:
             # Select all entries ORM style
             stmt = select(ProjectSession.__table__).where(
@@ -197,10 +199,11 @@ class SQLiteLocalStorage:
         df["duration"] = df["end_time"] - df["start_time"]
 
         print(df)
-        print(f"Total time spent on project '{proj_name}': {time_delta_to_str(df['duration'].sum())}")
+        print(
+            f"Total time spent on project '{proj_name}': {time_delta_to_str(df['duration'].sum())}"
+        )
 
         return df
-        
 
     def write_project_to_csv(self, proj_name: str) -> None:
         """Writes project's time usage in a .csv file"""
@@ -212,7 +215,6 @@ class SQLiteLocalStorage:
         except Exception as e:
             print(f"Could not write to .csv file ({e})")
             raise RuntimeError("Error writing CSV file") from e
-
 
     def list_projects(self) -> None:
         """Lists all projects being tracked"""
@@ -238,14 +240,15 @@ class SQLiteLocalStorage:
         for i, project in enumerate(project_names):
             print(f"{i + 1}: {project}")
 
-    def project_exists(self, proj_name: str) -> bool:
-        """Checks if a project with given name exists in the database
+    def ongoing_session_exists(self, proj_name: str) -> bool:
+        """Checks if a project with given name exists in the database and it has
+        a row with no end time (=ongoing)
 
         Args:
             proj_name (str): the project name
 
         Returns:
-            bool: True if project exists, False otherwise
+            bool: True if ongoing project session exists, False otherwise
         """
         try:
             with Session(self.engine) as db_session:
@@ -253,6 +256,7 @@ class SQLiteLocalStorage:
                     db_session.execute(
                         select(ProjectSession)
                         .where(ProjectSession.proj_name == proj_name)
+                        .where(ProjectSession.end_time.is_(None))
                         .limit(1)
                     )
                     .scalars()

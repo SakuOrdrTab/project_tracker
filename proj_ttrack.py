@@ -5,7 +5,8 @@ import argparse
 from src.PostgreCloudStorage import PostgreCloudStorage
 from src.installer import install_bats_to_cwd
 
-def add_arguments(arg_parser : argparse.ArgumentParser) -> None:
+
+def add_arguments(arg_parser: argparse.ArgumentParser) -> None:
     """Mutates arg_parser to have the app's different arguments.
 
     Args:
@@ -52,7 +53,8 @@ def add_arguments(arg_parser : argparse.ArgumentParser) -> None:
         help="Install batch files for current working directory to start and stop a session",
     )
 
-def handle_tasks(args : argparse.Namespace) -> None:
+
+def handle_tasks(args: argparse.Namespace) -> None:
     """Handles all tasks defined by args; early return for those not requiring a storage
     which is not initialized
 
@@ -61,12 +63,13 @@ def handle_tasks(args : argparse.Namespace) -> None:
     """
     # early return not initializing storage if installing
     if args.install:
-        install_bats_to_cwd() # No storage init needed
+        install_bats_to_cwd()  # No storage init needed
         return
-    
+
     handle_storage_tasks(args)
 
-def handle_storage_tasks(args : argparse.Namespace) -> None:
+
+def handle_storage_tasks(args: argparse.Namespace) -> None:
     """Handles all tasks defined by args that require a storage which is initialized
 
     Args:
@@ -83,15 +86,18 @@ def handle_storage_tasks(args : argparse.Namespace) -> None:
 
     # project specific tasks
     if args.stop is not None:
-        # TODO:
-        # Only -stop if there is a project running (add Storage.project_exists(project_name))
-        description = (
-            " ".join(args.stop)
-            if args.stop
-            # No description of time usage was provided in command line
-            else input("What did you do in this session? ")
-        )
-        storage.stop_working(proj_name=args.projectname, activities=description)
+        proj_to_stop = args.projectname
+        # Only stop a session, if ongoing session for project exists
+        if storage.ongoing_session_exists(proj_to_stop):
+            description = (
+                " ".join(args.stop)
+                if args.stop
+                # No description of time usage was provided in command line
+                else input("What did you do in this session? ")
+            )
+            storage.stop_working(proj_name=args.projectname, activities=description)
+        else:
+            print(f"No ongoing session in project {proj_to_stop}, exiting..")
     elif args.start:
         storage.start_working(proj_name=args.projectname)
     elif args.print:
@@ -101,8 +107,7 @@ def handle_storage_tasks(args : argparse.Namespace) -> None:
 
 
 def main() -> None:
-    """Main program loop
-    """
+    """Main program loop"""
     arg_parser = argparse.ArgumentParser(description="Track a project's working hours.")
 
     add_arguments(arg_parser=arg_parser)
@@ -110,10 +115,17 @@ def main() -> None:
     args = arg_parser.parse_args()
 
     # Check for print help condition
-    if (args.projectname is None and args.stop is None and not args.start 
-        and not args.export and not args.print and not args.list and not args.install):
+    if (
+        args.projectname is None
+        and args.stop is None
+        and not args.start
+        and not args.export
+        and not args.print
+        and not args.list
+        and not args.install
+    ):
         arg_parser.print_help()
-        sys.exit(0) # Exit after printing help
+        sys.exit(0)  # Exit after printing help
 
     # Check for missing project name when required
     if args.projectname is None and not args.list and not args.install:

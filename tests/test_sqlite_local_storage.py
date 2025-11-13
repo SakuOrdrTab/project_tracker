@@ -17,7 +17,7 @@ import pandas as pd
 import pytest
 from sqlalchemy import select
 
-from SQLiteLocalStorage import SQLiteLocalStorage, ProjectSession
+from SQLiteLocalStorage import SQLiteLocalStorage, ProjectSession  # pyright: ignore[reportMissingImports]
 
 
 @pytest.fixture()
@@ -67,7 +67,7 @@ def test_prevent_double_start(
     )  # should print a warning and NOT create a 2nd open session
 
     out = capsys.readouterr().out
-    assert "Started working on the project: dup." in out
+    assert "Started working on the project dup." in out
     assert "There is already an ongoing session" in out
 
     # Ensure only one open session exists
@@ -156,17 +156,19 @@ def test_write_project_to_csv_creates_file_with_duration(
     assert (df["duration"].dt.total_seconds() >= 0).all()
     assert (df["proj_name"] == "csvproj").all()
 
+
 def test_non_existing_project_returns_false(
     storage: SQLiteLocalStorage, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    assert not storage.project_exists("nonexistent")
+    assert not storage.ongoing_session_exists("nonexistent")
 
-def test_existing_project_returns_true(
+
+def test_existing_project_works_correctly(
     storage: SQLiteLocalStorage, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     storage.start_working("existent")
     # a non-finished project counts as existing
-    assert storage.project_exists("existent")
-    # finished project also counts
+    assert storage.ongoing_session_exists("existent")
+    # finished project does not count
     storage.stop_working("existent", "done")
-    assert storage.project_exists("existent")
+    assert not storage.ongoing_session_exists("existent")
