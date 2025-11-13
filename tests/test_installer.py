@@ -13,7 +13,7 @@ Covers:
 
 import builtins
 
-import installer
+import installer  # pyright: ignore[reportMissingImports]
 
 
 def test_validate_proj_name_valid_cases():
@@ -129,10 +129,7 @@ def test_bats_are_created_in_current_working_directory(tmp_path, monkeypatch):
     # Fake user input
     monkeypatch.setattr("builtins.input", lambda _: "remote-proj")
 
-    # Run the installer — it should write to the current working dir
-    from installer import install_bats_to_cwd
-
-    install_bats_to_cwd()
+    installer.install_bats_to_cwd()
 
     start_path = project_dir / "start_track.bat"
     stop_path = project_dir / "stop_track.bat"
