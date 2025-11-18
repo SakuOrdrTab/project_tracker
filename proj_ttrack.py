@@ -5,6 +5,11 @@ import argparse
 from src.PostgreCloudStorage import PostgreCloudStorage
 from src.installer import install_bats_to_cwd
 
+# TODO:
+# - change parameter style to "--" instead of "-"
+# - more tests needed?
+# - change -print to sort by start date and maybe prune id and show dates?
+
 
 def add_arguments(arg_parser: argparse.ArgumentParser) -> None:
     """Mutates arg_parser to have the app's different arguments.
