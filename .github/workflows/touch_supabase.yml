@@ -29,6 +29,7 @@ jobs:
       - name: Run Pytest
         env:
           # Inject the Test DB URL for tests
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
           TEST_POSTGRES_URL: ${{ secrets.TEST_POSTGRES_URL }}
         run: pytest .
 
@@ -38,4 +39,4 @@ jobs:
         env:
             # Inject the Prod DB URL for keep-alive
             POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-        run: python proj_ttrack.py -list
+        run: proj_ttrack.cmd -list
