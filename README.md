@@ -56,6 +56,14 @@ Remember, these only work for starting and stopping the sessions. If youwant to 
 
 >proj_ttrack <project> -export
 
+## GitHub actions
+
+I set up a workflow to run the local tests every 6 days, as Supabase puts databases to sleep after 7 days in the free tier. This is especially a problem for the test DB, as it can be a while between running the tests. The action wakes up the Supabase DBs, so you don't have to worry about that.
+
+I don't know if you clone/fork the repo if the actions are on by default or do you need to turn them on manually.
+
+Anyhow, if you want to use the tests, you must set up the Supabase DB uris as GitHub actions secrets. See the secret names in the `.env.example`.
+
 
 ## Additional info
 

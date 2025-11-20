@@ -4,7 +4,7 @@ on:
   # Run automatically every 6th day to beat the 7-day Supabase pause limit
   schedule:
     - cron: '0 0 */6 * *'
-  # Allows you to run manually to verify connection immediately
+  # Allows running manually to verify connection immediately
   workflow_dispatch:
 
 jobs:
@@ -40,5 +40,6 @@ jobs:
             # Inject the Prod DB URL for keep-alive
             POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
             TEST_POSTGRES_URL: ${{ secrets.TEST_POSTGRES_URL }}
+            # pythonpath needs to find the src folder
             PYTHONPATH: .;./src
         run: python proj_ttrack.py -list
