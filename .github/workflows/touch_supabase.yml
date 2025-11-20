@@ -40,4 +40,5 @@ jobs:
             # Inject the Prod DB URL for keep-alive
             POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
             TEST_POSTGRES_URL: ${{ secrets.TEST_POSTGRES_URL }}
-        run: .\proj_ttrack.cmd -list
+            PYTHONPATH: .
+        run: python proj_ttrack.py -list
