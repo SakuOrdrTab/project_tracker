@@ -1,0 +1,3 @@
+rules:
+  context-property-not-exist: off
+  context-object-may-be-null: off
