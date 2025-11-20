@@ -18,19 +18,24 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11' 
+          python-version: '3.12' 
           cache: 'pip'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest
-          # PowerShell syntax to check if file exists
-          if (Test-Path requirements.txt) { pip install -r requirements.txt }
+          pip install -r requirements.txt
 
       - name: Run Pytest
         env:
-          # These inject the real Supabase connection strings from your Repo Secrets
-          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          # Inject the Test DB URL for tests
           TEST_POSTGRES_URL: ${{ secrets.TEST_POSTGRES_URL }}
         run: pytest .
+
+      - name: List Projects (Keeps Prod DB Alive)
+        # This ensures this runs even if 'Run Tests' fails
+        if: always() 
+        env:
+            # Inject the Prod DB URL for keep-alive
+            POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+        run: python proj_ttrack.py -list
