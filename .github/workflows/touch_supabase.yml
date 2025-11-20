@@ -1,0 +1,36 @@
+name: Supabase Keep-Alive & Tests
+
+on:
+  # Run automatically every 6th day to beat the 7-day Supabase pause limit
+  schedule:
+    - cron: '0 0 */6 * *'
+  # Allows you to run manually to verify connection immediately
+  workflow_dispatch:
+
+jobs:
+  run-tests:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' 
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          # PowerShell syntax to check if file exists
+          if (Test-Path requirements.txt) { pip install -r requirements.txt }
+
+      - name: Run Pytest
+        env:
+          # These inject the real Supabase connection strings from your Repo Secrets
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          TEST_POSTGRES_URL: ${{ secrets.TEST_POSTGRES_URL }}
+        run: pytest .
