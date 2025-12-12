@@ -201,6 +201,9 @@ class SQLiteLocalStorage:
         # sort accoring to start time
         df = df.sort_values(by="start_time").reset_index(drop=True)
 
+        # ditch index and id column for printing
+        df = df.drop(columns=["id"])
+
         print(df)
         print(
             f"Total time spent on project '{proj_name}': {time_delta_to_str(df['duration'].sum())}"
