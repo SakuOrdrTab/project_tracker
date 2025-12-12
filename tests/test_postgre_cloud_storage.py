@@ -241,3 +241,28 @@ def test_existing_project_works_correctly(
     # finished project does not count
     storage.stop_working("existent", "done")
     assert not storage.ongoing_session_exists("existent")
+
+# test -print sorts by start_time
+def test_print_project_sorts_by_start_time(
+    storage: PostgreCloudStorage, capsys: pytest.CaptureFixture[str]
+):
+    storage.start_working("proj")
+    storage.stop_working("proj", "first")
+    storage.start_working("proj")
+    storage.stop_working("proj", "second")
+    storage.start_working("proj")
+    storage.stop_working("proj", "third")
+
+    storage.print_project("proj")
+    out = capsys.readouterr().out
+
+    # Extract start times from output
+    lines = out.splitlines()
+    start_times = []
+    for ln in lines:
+        m = re.search(r"Start Time:\s+([^\|]+)\|", ln)
+        if m:
+            start_times.append(m.group(1).strip())
+
+    # Check that start times are in ascending order
+    assert start_times == sorted(start_times)
