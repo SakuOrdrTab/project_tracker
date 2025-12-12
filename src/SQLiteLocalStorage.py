@@ -198,6 +198,9 @@ class SQLiteLocalStorage:
         df["end_time"] = pd.to_datetime(df["end_time"], utc=True, errors="coerce")
         df["duration"] = df["end_time"] - df["start_time"]
 
+        # sort accoring to start time
+        df = df.sort_values(by="start_time").reset_index(drop=True)
+
         print(df)
         print(
             f"Total time spent on project '{proj_name}': {time_delta_to_str(df['duration'].sum())}"
