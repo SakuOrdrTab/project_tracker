@@ -105,7 +105,7 @@ def test_missing_projectname_for_required_tasks_exits(capsys, mock_storage):
     by the mock.
     """
     # 1. Do NOT expect ExitCalled, as the application fails to exit.
-    run_main_with_args(["-start"])
+    run_main_with_args(["--start"])
 
     # 2. Verify the correct error message was printed
     captured = capsys.readouterr()
@@ -120,10 +120,10 @@ def test_missing_projectname_for_required_tasks_exits(capsys, mock_storage):
 
 def test_list_and_install_dont_require_projectname():
     """
-    -list and -install should proceed without raising the 'missing project name' error,
+    --list and --install should proceed without raising the 'missing project name' error,
     as they are handled before that check in main().
     """
-    run_main_with_args(["-list"])
+    run_main_with_args(["--list"])
     # Passes if no exception (including ExitCalled(1)) is raised.
 
 
@@ -131,20 +131,19 @@ def test_list_and_install_dont_require_projectname():
 
 
 def test_start_working_calls_storage_method(mock_storage):
-    """Test -start calls storage.start_working with the correct project name."""
-    run_main_with_args(["MyProj", "-start"])
+    """Test --start calls storage.start_working with the correct project name."""
+    run_main_with_args(["MyProj", "--start"])
 
     mock_storage.start_working.assert_called_once_with(proj_name="MyProj")
     mock_storage.stop_working.assert_not_called()
 
 
 def test_stop_with_explicit_description(mock_storage):
-    """Test -stop with a description provided via CLI."""
+    """Test --stop with a description provided via CLI."""
     # Mock the check for an ongoing session to return True
     mock_storage.ongoing_session_exists.return_value = True
 
-    run_main_with_args(["CoolProj", "-stop", "Finished", "the", "feature"])
-
+    run_main_with_args(["CoolProj", "--stop", "Finished", "the", "feature"])
     mock_storage.ongoing_session_exists.assert_called_once_with("CoolProj")
     mock_storage.stop_working.assert_called_once_with(
         proj_name="CoolProj", activities="Finished the feature"
@@ -152,15 +151,15 @@ def test_stop_with_explicit_description(mock_storage):
 
 
 def test_stop_prompts_for_description_if_none_provided(mock_storage, monkeypatch):
-    """Test -stop with no CLI description prompts the user for input."""
+    """Test --stop with no CLI description prompts the user for input."""
     # Mock ongoing session check
     mock_storage.ongoing_session_exists.return_value = True
 
     # Mock the built-in input() function to return a predefined string
     monkeypatch.setattr("builtins.input", lambda prompt: "User typed activity")
 
-    # Pass -stop with no following arguments (args.stop will be [] in argparse)
-    run_main_with_args(["PromptProj", "-stop"])
+    # Pass --stop with no following arguments (args.stop will be [] in argparse)
+    run_main_with_args(["PromptProj", "--stop"])
 
     mock_storage.stop_working.assert_called_once_with(
         proj_name="PromptProj", activities="User typed activity"
@@ -172,7 +171,7 @@ def test_stop_with_no_ongoing_session_prints_message(mock_storage, capsys):
     # Mock the check for an ongoing session to return False
     mock_storage.ongoing_session_exists.return_value = False
 
-    run_main_with_args(["NoSessionProj", "-stop"])
+    run_main_with_args(["NoSessionProj", "--stop"])
 
     # Check for the warning message
     captured = capsys.readouterr()
@@ -187,22 +186,22 @@ def test_stop_with_no_ongoing_session_prints_message(mock_storage, capsys):
 
 
 def test_list_projects_task(mock_storage):
-    """Test -list calls storage.list_projects()."""
-    run_main_with_args(["-list"])
+    """Test --list calls storage.list_projects()."""
+    run_main_with_args(["--list"])
     mock_storage.list_projects.assert_called_once()
     mock_storage.print_project.assert_not_called()
 
 
 def test_print_task(mock_storage):
-    """Test -print calls storage.print_project() with the correct name."""
-    run_main_with_args(["PrintProj", "-print"])
+    """Test --print calls storage.print_project() with the correct name."""
+    run_main_with_args(["PrintProj", "--print"])
     mock_storage.print_project.assert_called_once_with(proj_name="PrintProj")
     mock_storage.write_project_to_csv.assert_not_called()
 
 
 def test_export_task(mock_storage):
-    """Test -export calls storage.write_project_to_csv() with the correct name."""
-    run_main_with_args(["ExportProj", "-export"])
+    """Test --export calls storage.write_project_to_csv() with the correct name."""
+    run_main_with_args(["ExportProj", "--export"])
     mock_storage.write_project_to_csv.assert_called_once_with(proj_name="ExportProj")
     mock_storage.print_project.assert_not_called()
 
@@ -211,10 +210,10 @@ def test_export_task(mock_storage):
 
 
 def test_install_task_calls_installer_function():
-    """Test -install calls install_bats_to_cwd and exits early."""
+    """Test --install calls install_bats_to_cwd and exits early."""
     # Patch the installer function globally within the proj_ttrack module
     with patch("proj_ttrack.install_bats_to_cwd") as mock_install:
-        run_main_with_args(["-install"])
+        run_main_with_args(["--install"])
 
         # Installer should be called
         mock_install.assert_called_once()
