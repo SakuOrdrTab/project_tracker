@@ -198,7 +198,7 @@ class SQLiteLocalStorage:
         df["end_time"] = pd.to_datetime(df["end_time"], utc=True, errors="coerce")
         df["duration"] = df["end_time"] - df["start_time"]
 
-        # sort accoring to start time
+        # sort according to start time
         df = df.sort_values(by="start_time").reset_index(drop=True)
 
         # ditch index and id column for printing
