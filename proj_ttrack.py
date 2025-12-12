@@ -25,14 +25,14 @@ def _add_argument_with_backward_compat(
         **kwargs: Additional keyword arguments to pass to add_argument
     """
     # Validate that name doesn't contain hyphens
-    if name.startswith("-"):
+    if "-" in name:
         raise ValueError(f"Argument name should not contain hyphens: {name}")
     
     # Add the modern double-hyphen version with provided kwargs
     arg_parser.add_argument(f"--{name}", **kwargs)
     
     # Add the legacy single-hyphen version with suppressed help
-    arg_parser.add_argument(f"-{name}", **dict(kwargs, help=argparse.SUPPRESS))
+    arg_parser.add_argument(f"-{name}", **{**kwargs, "help": argparse.SUPPRESS})
 
 
 def add_arguments(arg_parser: argparse.ArgumentParser) -> None:
