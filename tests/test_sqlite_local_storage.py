@@ -172,3 +172,32 @@ def test_existing_project_works_correctly(
     # finished project does not count
     storage.stop_working("existent", "done")
     assert not storage.ongoing_session_exists("existent")
+
+# test -print sorts by start_time
+def test_print_project_sorts_by_start_time(
+    storage: SQLiteLocalStorage, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    # Create multiple sessions with different start times
+    storage.start_working("sortproj")
+    storage.stop_working("sortproj", "first session")
+
+    storage.start_working("sortproj")
+    storage.stop_working("sortproj", "second session")
+
+    storage.start_working("sortproj")
+    storage.stop_working("sortproj", "third session")
+
+    # Capture the printed output
+    storage.print_project("sortproj")
+    out = capsys.readouterr().out
+
+    # Extract start times from the output
+    lines = out.splitlines()
+    start_times = []
+    for line in lines:
+        if "Start Time:" in line:
+            time_str = line.split("Start Time:")[1].strip()
+            start_times.append(pd.to_datetime(time_str))
+
+    # Check if start times are sorted
+    assert start_times == sorted(start_times)
