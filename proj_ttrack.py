@@ -26,34 +26,34 @@ def add_arguments(arg_parser: argparse.ArgumentParser) -> None:
     )
     # Optional argument: start working on a project
     arg_parser.add_argument(
-        "-start", action="store_true", help="Start a working period"
+        "--start", "-start", action="store_true", help="Start a working period"
     )
     # Optional argument: stop working on a project
     arg_parser.add_argument(
-        "-stop",
+        "--stop", "-stop",
         nargs="*",  # Zero or more arguments for description
         default=None,
         help="Stop a working period and provide a description (optional)",
     )
     # Optional argument: export project time usage to .csv
     arg_parser.add_argument(
-        "-export",
+        "--export", "-export",
         action="store_true",
         help="Write project time usage to .csv (current working directory)",
     )
     # Optional argument: print project time usage
     arg_parser.add_argument(
-        "-print",
+        "--print", "-print",
         action="store_true",
         help="Print project time usage",
     )
     # Optional argument: list all tracked projects
     arg_parser.add_argument(
-        "-list", action="store_true", help="List all tracked projects"
+        "--list", "-list", action="store_true", help="List all tracked projects"
     )
     # Install windows batch files to CWD, designed to be useful for each project
     arg_parser.add_argument(
-        "-install",
+        "--install", "-install",
         action="store_true",
         help="Install batch files for current working directory to start and stop a session",
     )
