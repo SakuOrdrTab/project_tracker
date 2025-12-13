@@ -2,6 +2,7 @@
 script files (start_track and stop_track) that don't need any arguments and allow quick session
 management in each project. Creates .bat files on Windows and .sh files on Unix-like systems."""
 
+import os
 import platform
 from os import path, getcwd
 
@@ -87,7 +88,6 @@ proj_ttrack.sh {proj_name} --stop "$@"
 
     # Make shell scripts executable on Unix-like systems
     if not is_windows:
-        import os
         os.chmod(start_path, 0o755)
         os.chmod(stop_path, 0o755)
 

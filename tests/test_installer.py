@@ -14,6 +14,7 @@ Covers:
 """
 
 import builtins
+import os
 import platform
 from unittest.mock import patch
 
@@ -102,7 +103,6 @@ def test_install_bats_to_cwd_creates_files_and_contents(tmp_path, monkeypatch, c
         assert "proj_ttrack.sh my-project --start" in start_text
         assert 'proj_ttrack.sh my-project --stop "$@"' in stop_text
         # Verify shell scripts are executable
-        import os
         assert os.access(start_path, os.X_OK), "start_track.sh should be executable"
         assert os.access(stop_path, os.X_OK), "stop_track.sh should be executable"
 
@@ -240,6 +240,5 @@ def test_platform_specific_scripts_unix(tmp_path, monkeypatch):
     assert "#!/usr/bin/env bash" in start_text
     
     # Verify executability
-    import os
     assert os.access(start_path, os.X_OK), "start_track.sh should be executable"
     assert os.access(stop_path, os.X_OK), "stop_track.sh should be executable"
