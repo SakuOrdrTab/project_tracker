@@ -6,9 +6,31 @@ from src.PostgreCloudStorage import PostgreCloudStorage
 from src.installer import install_bats_to_cwd
 
 # TODO:
-# - change parameter style to "--" instead of "-"
 # - more tests needed?
-# - change -print to sort by start date and maybe prune id and show dates?
+
+
+def _add_argument_with_backward_compat(
+    arg_parser: argparse.ArgumentParser, name: str, **kwargs
+) -> None:
+    """Helper function to add an argument with both double-hyphen and single-hyphen versions.
+    
+    Adds the modern double-hyphen version with full help text, and the legacy
+    single-hyphen version with suppressed help for backward compatibility.
+    
+    Args:
+        arg_parser: The ArgumentParser to add arguments to
+        name: The argument name (without hyphens, e.g., 'start', 'stop')
+        **kwargs: Additional keyword arguments to pass to add_argument
+    """
+    # Validate that name doesn't contain hyphens
+    if "-" in name:
+        raise ValueError(f"Argument name should not contain hyphens: {name}")
+    
+    # Add the modern double-hyphen version with provided kwargs
+    arg_parser.add_argument(f"--{name}", **kwargs)
+    
+    # Add the legacy single-hyphen version with suppressed help
+    arg_parser.add_argument(f"-{name}", **{**kwargs, "help": argparse.SUPPRESS})
 
 
 def add_arguments(arg_parser: argparse.ArgumentParser) -> None:
@@ -25,57 +47,41 @@ def add_arguments(arg_parser: argparse.ArgumentParser) -> None:
         help="The name of the project is needed as the first argument.",
     )
     # Optional argument: start working on a project
-    arg_parser.add_argument(
-        "--start", action="store_true", help="Start a working period"
+    _add_argument_with_backward_compat(
+        arg_parser, "start", action="store_true", help="Start a working period"
     )
-    arg_parser.add_argument("-start", action="store_true", help=argparse.SUPPRESS)
     # Optional argument: stop working on a project
-    arg_parser.add_argument(
-        "--stop",
+    _add_argument_with_backward_compat(
+        arg_parser,
+        "stop",
         nargs="*",  # Zero or more arguments for description
         default=None,
         help="Stop a working period and provide a description (optional)",
     )
-    arg_parser.add_argument("-stop", nargs="*", default=None, help=argparse.SUPPRESS)
     # Optional argument: export project time usage to .csv
-    arg_parser.add_argument(
-        "--export",
+    _add_argument_with_backward_compat(
+        arg_parser,
+        "export",
         action="store_true",
         help="Write project time usage to .csv (current working directory)",
     )
-    arg_parser.add_argument(
-        "-export",
-        action="store_true",
-        help=argparse.SUPPRESS,
-    )
     # Optional argument: print project time usage
-    arg_parser.add_argument(
-        "--print",
+    _add_argument_with_backward_compat(
+        arg_parser,
+        "print",
         action="store_true",
         help="Print project time usage",
     )
-    arg_parser.add_argument(
-        "-print",
-        action="store_true",
-        help=argparse.SUPPRESS,
-    )
     # Optional argument: list all tracked projects
-    arg_parser.add_argument(
-        "--list", action="store_true", help="List all tracked projects"
-    )
-    arg_parser.add_argument(
-        "-list", action="store_true", help=argparse.SUPPRESS
+    _add_argument_with_backward_compat(
+        arg_parser, "list", action="store_true", help="List all tracked projects"
     )
     # Install windows batch files to CWD, designed to be useful for each project
-    arg_parser.add_argument(
-        "--install",
+    _add_argument_with_backward_compat(
+        arg_parser,
+        "install",
         action="store_true",
         help="Install batch files for current working directory to start and stop a session",
-    )
-    arg_parser.add_argument(
-        "-install",
-        action="store_true",
-        help=argparse.SUPPRESS,
     )
 
 
