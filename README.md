@@ -7,7 +7,7 @@ These instructions are made for usage in Windows platform; you need to make twea
 Pick a nice folder, that you are comfortable placing the project root later to system PATH. 
 Clone the repo there, create a virtual environment named `.venv` and install requirements:
 
->python - m venv .venv
+>python -m venv .venv
 >
 >.venv\Scripts\activate
 >
@@ -39,12 +39,12 @@ This script is designed to be used from a command prompt. After you have added t
 
 >proj_ttrack <args>
 
-<I>'<project_name> -start'</I> Sets a starting time for a project work session. Run this when you start coding<BR>
-<I>'<project_name> -stop <optional_text>'</I>  Sets the closing time, use when you stop coding. if optional text is empty, it asks for what you did durring the session<BR>
-<I>'<project_name> -export'</I> exports your sessions to a `.csv`-file<BR>
-<I>'<project_name> -print'</I> Prints your sessions in a project<BR>
-<I>'-list'</I> Lists all tracked projects in database<BR>
-<I>'-install'</I> Adds two windows batch files, start_track.bat and stop_track.bat to your current working directory. I suggest that as your proj_ttrack is in your PATH, you run this in your new project where you want to track time sessions. Running the bats eases you from typing the project name every time.<BR>
+<I>'<project_name> --start'</I> Sets a starting time for a project work session. Run this when you start coding<BR>
+<I>'<project_name> --stop <optional_text>'</I>  Sets the closing time, use when you stop coding. if optional text is empty, it asks for what you did durring the session<BR>
+<I>'<project_name> --export'</I> exports your sessions to a `.csv`-file<BR>
+<I>'<project_name> --print'</I> Prints your sessions in a project<BR>
+<I>'--list'</I> Lists all tracked projects in database<BR>
+<I>'--install'</I> Adds two windows batch files, start_track.bat and stop_track.bat to your current working directory. I suggest that as your proj_ttrack is in your PATH, you run this in your new project where you want to track time sessions. Running the bats eases you from typing the project name every time.<BR>
 
 After installing the windows batch files to a project directory, you can just start and stop time tracking for that particular project with the bats:
 
@@ -54,7 +54,7 @@ After installing the windows batch files to a project directory, you can just st
 
 Remember, these only work for starting and stopping the sessions. If youwant to e.g. export the sessions, you have to use `proj_ttrack`:
 
->proj_ttrack <project> -export
+>proj_ttrack <project> --export
 
 ## GitHub actions
 
