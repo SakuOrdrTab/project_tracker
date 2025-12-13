@@ -1,3 +1,5 @@
+![Windows Only](https://img.shields.io/badge/Platform-Windows-0078D4?style=for-the-badge&logo=microsoft-edge&logoColor=white)
+
 # A Small project time tracker
 
 ## Install
