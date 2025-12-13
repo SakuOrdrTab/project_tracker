@@ -8,7 +8,7 @@ from os import path, getcwd
 
 # Illegal filename chars for different platforms
 # Windows is more restrictive, so we use those as the base
-ILLEGAL_CHARS_WINDOWS = set('<>:"/\\|?*&|^%!()[]{};=,~`')
+ILLEGAL_CHARS_WINDOWS = set('<>:"/\\|?*&^%!()[]{};=,~`')
 # Unix/Linux mainly prohibits / and null
 ILLEGAL_CHARS_UNIX = set('/\0')
 
@@ -63,6 +63,7 @@ for 'my funny project' you can use 'my-funny-project' for example""")
 
     if is_windows:
         # Create Windows batch files
+        # Use single-dash syntax for backward compatibility
         start_script = f"""@echo off
 proj_ttrack {proj_name} -start
 """
@@ -72,6 +73,7 @@ proj_ttrack {proj_name} -stop %*
 """
     else:
         # Create Unix shell scripts
+        # Use modern double-dash syntax
         start_script = f"""#!/usr/bin/env bash
 proj_ttrack.sh {proj_name} --start
 """
