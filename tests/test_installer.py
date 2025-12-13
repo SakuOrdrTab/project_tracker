@@ -10,10 +10,12 @@ Covers:
 - correct command contents inside the script files
 - behavior when proj_ttrack is run from a different directory (scripts created there)
 - printed installer messages including created file paths
+- platform detection and appropriate file creation
 """
 
 import builtins
 import platform
+from unittest.mock import patch
 
 import installer  # pyright: ignore[reportMissingImports]
 
@@ -184,3 +186,60 @@ def test_bats_are_created_in_current_working_directory(tmp_path, monkeypatch):
     else:
         assert "proj_ttrack.sh remote-proj --start" in start_text
         assert 'proj_ttrack.sh remote-proj --stop "$@"' in stop_text
+
+
+def test_platform_specific_scripts_windows(tmp_path, monkeypatch):
+    """
+    Test that Windows batch files are created when platform is Windows.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(builtins, "input", lambda _: "win-project")
+    
+    # Mock platform.system() to return 'Windows'
+    with patch('installer.platform.system', return_value='Windows'):
+        installer.install_bats_to_cwd()
+    
+    # Should create .bat files
+    start_path = tmp_path / "start_track.bat"
+    stop_path = tmp_path / "stop_track.bat"
+    
+    assert start_path.exists(), "start_track.bat should exist on Windows"
+    assert stop_path.exists(), "stop_track.bat should exist on Windows"
+    
+    start_text = start_path.read_text(encoding="utf-8")
+    stop_text = stop_path.read_text(encoding="utf-8")
+    
+    assert "proj_ttrack win-project -start" in start_text
+    assert "proj_ttrack win-project -stop %*" in stop_text
+    assert "@echo off" in start_text
+
+
+def test_platform_specific_scripts_unix(tmp_path, monkeypatch):
+    """
+    Test that shell scripts are created when platform is Linux/Unix.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(builtins, "input", lambda _: "unix-project")
+    
+    # Mock platform.system() to return 'Linux'
+    with patch('installer.platform.system', return_value='Linux'):
+        installer.install_bats_to_cwd()
+    
+    # Should create .sh files
+    start_path = tmp_path / "start_track.sh"
+    stop_path = tmp_path / "stop_track.sh"
+    
+    assert start_path.exists(), "start_track.sh should exist on Linux"
+    assert stop_path.exists(), "stop_track.sh should exist on Linux"
+    
+    start_text = start_path.read_text(encoding="utf-8")
+    stop_text = stop_path.read_text(encoding="utf-8")
+    
+    assert "proj_ttrack.sh unix-project --start" in start_text
+    assert 'proj_ttrack.sh unix-project --stop "$@"' in stop_text
+    assert "#!/usr/bin/env bash" in start_text
+    
+    # Verify executability
+    import os
+    assert os.access(start_path, os.X_OK), "start_track.sh should be executable"
+    assert os.access(stop_path, os.X_OK), "stop_track.sh should be executable"
