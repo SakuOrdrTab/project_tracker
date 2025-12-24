@@ -1,22 +1,39 @@
-![Windows Only](https://img.shields.io/badge/Platform-Windows-0078D4?style=for-the-badge&logo=microsoft-edge&logoColor=white)
+![Cross-Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-0078D4?style=for-the-badge&logo=windows&logoColor=white)
 
 # A Small project time tracker
 
 ## Install
 
-These instructions are made for usage in Windows platform; you need to make tweaks for the shell scripts etc for this to work in unix, linux and whatever... I also assume you want to have a centralized location for the script as you want to track multiple projects.
+This project tracker works on Windows, Linux, macOS, and other Unix-like systems. Pick a nice folder where you're comfortable placing the project root, as you'll want a centralized location to track multiple projects.
 
-Pick a nice folder, that you are comfortable placing the project root later to system PATH. 
 Clone the repo there, create a virtual environment named `.venv` and install requirements:
 
->python -m venv .venv
->
->.venv\Scripts\activate
->
->pip install -r requirements.txt
->
+### Windows
 
-Add then the project root to your system PATH, so that your windows finds the proj_ttrack.cmd script from anywhere.
+```cmd
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### Linux/macOS/Unix
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Setting up PATH
+
+Add the project root to your system PATH:
+
+**Windows:** Add the project root to your system PATH so that Windows can find the `proj_ttrack.cmd` script from anywhere.
+
+**Linux/macOS/Unix:** Add the project root to your PATH and ensure `proj_ttrack.sh` has execute permissions (it should by default). You can add this line to your `~/.bashrc` or `~/.zshrc`:
+```bash
+export PATH="/path/to/project_tracker:$PATH"
+```
 
 <b>NOTICE:</b>
 The default database is currently the Supabase PostgreSQL database in the cloud; this you can track projects from your all devices in contrast to a local file database, that of course tracks only the operated computer/device.
@@ -37,26 +54,54 @@ To use Supabase ipV4 compliant <i>Session pooler</i> database, the POSTGRES_URL 
 
 ## Usage
 
-This script is designed to be used from a command prompt. After you have added the project root to your PATH, just run:
+This script is designed to be used from a command prompt/terminal. After you have added the project root to your PATH, run:
 
->proj_ttrack <args>
+**Windows:**
+```cmd
+proj_ttrack <args>
+```
+
+**Linux/macOS/Unix:**
+```bash
+proj_ttrack.sh <args>
+```
 
 <I>'<project_name> --start'</I> Sets a starting time for a project work session. Run this when you start coding<BR>
-<I>'<project_name> --stop <optional_text>'</I>  Sets the closing time, use when you stop coding. if optional text is empty, it asks for what you did durring the session<BR>
+<I>'<project_name> --stop <optional_text>'</I>  Sets the closing time, use when you stop coding. if optional text is empty, it asks for what you did during the session<BR>
 <I>'<project_name> --export'</I> exports your sessions to a `.csv`-file<BR>
 <I>'<project_name> --print'</I> Prints your sessions in a project<BR>
 <I>'--list'</I> Lists all tracked projects in database<BR>
-<I>'--install'</I> Adds two windows batch files, start_track.bat and stop_track.bat to your current working directory. I suggest that as your proj_ttrack is in your PATH, you run this in your new project where you want to track time sessions. Running the bats eases you from typing the project name every time.<BR>
+<I>'--install'</I> Installs two script files to your current working directory:
+- On Windows: `start_track.bat` and `stop_track.bat`
+- On Linux/macOS/Unix: `start_track.sh` and `stop_track.sh`
 
-After installing the windows batch files to a project directory, you can just start and stop time tracking for that particular project with the bats:
+I suggest running `--install` in each project directory where you want to track time sessions. These scripts make it easier by not requiring you to type the project name every time.<BR>
 
->start_track
+After installing the script files to a project directory, you can start and stop time tracking for that project:
 
->stop_track <optional text>
+**Windows:**
+```cmd
+start_track
+stop_track <optional text>
+```
 
-Remember, these only work for starting and stopping the sessions. If youwant to e.g. export the sessions, you have to use `proj_ttrack`:
+**Linux/macOS/Unix:**
+```bash
+./start_track.sh
+./stop_track.sh <optional text>
+```
 
->proj_ttrack <project> --export
+Remember, these scripts only work for starting and stopping sessions. If you want to e.g. export the sessions, you have to use `proj_ttrack` (or `proj_ttrack.sh`):
+
+**Windows:**
+```cmd
+proj_ttrack <project> --export
+```
+
+**Linux/macOS/Unix:**
+```bash
+proj_ttrack.sh <project> --export
+```
 
 ## GitHub actions
 
