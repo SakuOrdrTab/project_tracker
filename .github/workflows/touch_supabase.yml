@@ -3,7 +3,7 @@ name: Supabase Keep-Alive & Tests
 on:
   # Run automatically every 6th day to beat the 7-day Supabase pause limit
   schedule:
-    - cron: '0 0 */6 * *'
+    - cron: '0 0 */5 * *'
   # Allows running manually to verify connection immediately
   workflow_dispatch:
 
