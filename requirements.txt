@@ -9,11 +9,11 @@ pluggy==1.6.0
 psycopg==3.2.12
 psycopg-binary==3.2.12
 psycopg2==2.9.11
-Pygments==2.19.2
-pytest==8.4.2
+Pygments==2.20.0
+pytest==9.0.3
 pytest-dotenv==0.5.2
 python-dateutil==2.9.0.post0
-python-dotenv==1.2.1
+python-dotenv==1.2.2
 pytz==2025.2
 six==1.17.0
 SQLAlchemy==2.0.44
