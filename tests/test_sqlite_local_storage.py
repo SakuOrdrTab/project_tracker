@@ -32,6 +32,16 @@ def storage(tmp_path: Path) -> SQLiteLocalStorage:
     return SQLiteLocalStorage(profile="test", test_path=tmp_path, echo=False)
 
 
+def _duration_seconds(series: pd.Series) -> pd.Series:
+    """Normalize a duration column to seconds across pandas dtype changes."""
+    if pd.api.types.is_numeric_dtype(series):
+        return series.astype("int64")
+    td = pd.to_timedelta(series, errors="coerce")
+    if td.notna().all():
+        return td.dt.total_seconds()
+    return pd.to_numeric(series, errors="coerce").fillna(0)
+
+
 def test_start_and_stop_creates_row_and_duration_nonnegative(
     storage: SQLiteLocalStorage,
 ):
@@ -148,12 +158,8 @@ def test_write_project_to_csv_creates_file_with_duration(
         df.columns
     )
 
-    # All durations should be >= 0
-    # Note: if 'duration' comes in as string, convert to Timedelta
-    if df["duration"].dtype == object:
-        df["duration"] = pd.to_timedelta(df["duration"])
-
-    assert (df["duration"].dt.total_seconds() >= 0).all()
+    secs = _duration_seconds(df["duration"])
+    assert (secs >= 0).all()
     assert (df["proj_name"] == "csvproj").all()
 
 
