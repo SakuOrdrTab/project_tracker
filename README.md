@@ -36,20 +36,33 @@ export PATH="/path/to/project_tracker:$PATH"
 ```
 
 <b>NOTICE:</b>
-The default database is currently the Supabase PostgreSQL database in the cloud; this you can track projects from your all devices in contrast to a local file database, that of course tracks only the operated computer/device.
+The tracker uses a Neon PostgreSQL database in the cloud so you can track projects from multiple devices. Other PostgreSQL providers also work through SQLAlchemy. I used to use Supabase, but it's policy of shutting down projects was FAR too annoying; unless I was actively developing, the test database was shut down and thus unavailable when needed. I can recommend the Neon, though..
 
-To be able to use the Supabase, you must of course create a (free) account there and obtain passwords, username, url etc. The `PostgreCloudStorage` class loads these variables from the environment. Set a `.env` file on accordance to the `.env.example`:
+Create a project in [Neon](https://neon.com), open **Connect**, and copy the connection URL. Change its scheme from `postgresql://` to `postgresql+psycopg://`, keeping the credentials, database name, and SSL parameters. Copy `.env.example` to `.env` and set:
 ```
-POSTGRES_URL=
+POSTGRES_URL="postgresql+psycopg://USER:PASSWORD@HOST/DATABASE?sslmode=require&channel_binding=require"
 TEST_POSTGRES_URL=
 ```
 
-I strongly encourage to create a different project in Supabase for testing, if you want to try the tests. Currently the test skip Supabase/Postgres tests, if no TEST_POSTGRES_URL is provided.
+`POSTGRES_URL` is used by the tracker. `TEST_POSTGRES_URL` is used only by the PostgreSQL integration tests. Environment variables already set in your shell take precedence over `.env`.
 
-<b>WARNING:</b> If you set your production POSTGRES_URL to TEST_POSTGRES_URL, the <b> tests will erase your production database when run!</b>
+For tests, create a separate, disposable database named `project_tracker_test` in Neon. It can be in the same project; a separate project or branch is optional. Use a dedicated SQL-created login with access to the test schema and no write privileges on production tables. Roles created through the Neon Console have administrative privileges; see [Neon's database access guide](https://neon.com/docs/manage/database-access) for creating a limited role.
 
-To use Supabase ipV4 compliant <i>Session pooler</i> database, the POSTGRES_URL is in the style:<br>
-`postgresql://{username}:{password}@{host}:{port}/{database}`
+Set `TEST_POSTGRES_URL` to that database's URL using `postgresql+psycopg://` and the test login. The suite refuses database names that do not end in `_test`, and refuses a test URL matching the configured production endpoint and database.
+
+**Warning:** PostgreSQL integration tests delete all rows in the test database's `project_sessions` table. Never use production credentials or a database containing data you need. Leave `TEST_POSTGRES_URL` empty to skip these tests.
+
+Run the suite with:
+
+```bash
+python -m pytest
+```
+
+The application and tests use the Python driver; a local PostgreSQL server or command-line tools are not required. Install `pg_dump`, `pg_restore`, and `psql` separately when needed for backups or database administration.
+
+Neon automatically wakes an idle compute on the next connection, so no keep-alive workflow is needed. Free-tier usage limits still apply; see [Neon's current plans](https://neon.com/docs/introduction/plans).
+
+When moving an existing tracker database, changing the URL does not copy data. Back up and restore `project_sessions`, including its ID sequence, then compare the records before changing the production URL. Initialization creates missing tables but does not import existing sessions.
 
 
 ## Usage
@@ -105,15 +118,15 @@ proj_ttrack.sh <project> --export
 
 ## GitHub actions
 
-I set up a workflow to run the local tests every 6 days, as Supabase puts databases to sleep after 7 days in the free tier. This is especially a problem for the test DB, as it can be a while between running the tests. The action wakes up the Supabase DBs, so you don't have to worry about that.
+The `Tests` workflow in `.github/workflows/tests.yml` runs on pushes to `master` (including merges), pull requests targeting `master`, and manual dispatch. Pushes to other branches do not trigger it unless they update a pull request targeting `master`. It does not connect to production or run on a keep-alive schedule.
 
-I don't know if you clone/fork the repo if the actions are on by default or do you need to turn them on manually.
+In GitHub **Settings → Secrets and variables → Actions**, create a repository secret named `TEST_POSTGRES_URL` using the dedicated Neon test URL from your local `.env`. The production `POSTGRES_URL` secret is not used and can be removed. Secrets are not passed to pull requests from forks, so PostgreSQL tests are skipped there and whenever the test URL is absent.
 
-Anyhow, if you want to use the tests, you must set up the Supabase DB uris as GitHub actions secrets. See the secret names in the `.env.example`.
+Commit and push the workflow change, and enable Actions if it is disabled. Never commit `.env` or paste connection strings into workflow files.
 
 
 ## Additional info
 
-The program uses currently supabase and PostgreSQL for managing data.
+The program uses Neon PostgreSQL and SQLAlchemy for managing data.
 
-Currently, the program logic prevents non-sequential "starts" and "stops". By that I mean, if you forget to close a session, it becomes impossible to alter the closing time for example the next day you happen to notice it. Also, if you "add just a few lines of code more", you can't put another stop mark to the session. However, if you want program to work differently in these regards, feel free just altering a bit the `.start_working()` and `.stop_working()` methods, they can handle nulls etc quite easily without overt recoding. And if you are using Supabase or other external DB, you can edit the data there.
+Currently, the program logic prevents non-sequential "starts" and "stops". By that I mean, if you forget to close a session, it becomes impossible to alter the closing time for example the next day you happen to notice it. Also, if you "add just a few lines of code more", you can't put another stop mark to the session. However, if you want program to work differently in these regards, feel free just altering a bit the `.start_working()` and `.stop_working()` methods, they can handle nulls etc quite easily without overt recoding. You can also edit the data in the Neon SQL Editor.

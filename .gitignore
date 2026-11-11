@@ -7,3 +7,6 @@ __pycache__
 .pytest*
 
 .env
+
+# Private database migration backups
+/.migration-backups/
