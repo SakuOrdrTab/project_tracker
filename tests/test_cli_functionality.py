@@ -27,13 +27,15 @@ class ExitCalled(Exception):
 # --- Fixtures and Mocks ---
 
 
-@pytest.fixture
-def mock_storage():
+@pytest.fixture(autouse=True)
+def mock_storage(monkeypatch):
     """
     Mocks the PostgreCloudStorage class and its resulting instance.
     This prevents the CLI logic from attempting a real database connection.
     We patch the class definition itself within the proj_ttrack module.
     """
+    # CLI unit tests must never depend on local production credentials.
+    monkeypatch.setenv("POSTGRES_URL", "")
     # Create a mock instance with all storage methods mocked
     mock_instance = MagicMock()
 
@@ -50,7 +52,10 @@ def mock_sys_exit():
     The 'side_effect' makes the mock raise our custom exception with the exit code,
     immediately stopping the program flow within the tested function.
     """
-    with patch("sys.exit", side_effect=lambda code: ExitCalled(code)) as mock_exit:
+    def raise_exit(code=0):
+        raise ExitCalled(code)
+
+    with patch("sys.exit", side_effect=raise_exit) as mock_exit:
         yield mock_exit
 
 
@@ -62,8 +67,8 @@ def run_main_with_args(args: list[str]):
     Helper to set sys.argv and call proj_ttrack.main().
     sys.argv[0] must always be the script name.
     """
-    sys.argv = ["proj_ttrack.py"] + args
-    proj_ttrack.main()
+    with patch.object(sys, "argv", ["proj_ttrack.py"] + args):
+        proj_ttrack.main()
 
 
 # --- Tests ---
@@ -71,60 +76,35 @@ def run_main_with_args(args: list[str]):
 ## ✅ Basic Behavior (Help and Missing Args)
 
 
-def test_no_arguments_prints_help(capsys):
-    """
-    Calling with no arguments should print help.
+def test_no_arguments_prints_help(capsys, mock_storage):
+    """No arguments prints help and exits before initializing storage."""
+    with pytest.raises(ExitCalled) as exc_info:
+        run_main_with_args([])
 
-    NOTE ON FAILURE: The application's main function appears to catch the SystemExit(0)
-    raised by argparse when printing help, and returns silently. This prevents the
-    'mock_sys_exit' fixture from raising 'ExitCalled', causing the original test failure.
-    We remove the 'pytest.raises' block and only check the output to ensure the help
-    message was printed.
-    """
-    # 1. Do NOT expect ExitCalled, as the application suppresses it.
-    run_main_with_args([])
-
-    # 2. Verify help text was printed
+    assert exc_info.value.code == 0
     captured = capsys.readouterr()
     assert "usage: proj_ttrack.py" in captured.out
     assert "options:" in captured.out
-
-    # NOTE: The original output showed "Please provide a project name" was also printed,
-    # indicating faulty application flow. We only assert on the help text to make the test pass.
+    assert "Please provide a project name" not in captured.out
+    proj_ttrack.PostgreCloudStorage.assert_not_called()
 
 
 def test_missing_projectname_for_required_tasks_exits(capsys, mock_storage):
-    """
-    Calling -start without a project name should print the error message and exit.
+    """A missing required project name exits before initializing storage."""
+    with pytest.raises(ExitCalled) as exc_info:
+        run_main_with_args(["--start"])
 
-    NOTE ON FAILURE: The application code is missing a 'sys.exit(1)' call after
-    printing the error message, causing it to continue execution and call a mocked
-    storage method with proj_name=None, which previously led to a database error.
-    We remove the 'pytest.raises' assertion and check that the correct error message
-    was printed, and that the subsequent (buggy) storage call was harmlessly executed
-    by the mock.
-    """
-    # 1. Do NOT expect ExitCalled, as the application fails to exit.
-    run_main_with_args(["--start"])
-
-    # 2. Verify the correct error message was printed
+    assert exc_info.value.code == 1
     captured = capsys.readouterr()
     assert "Please provide a project name as the first argument." in captured.out
-
-    # 3. Verify that the application attempted to call the storage method with the
-    # missing argument, which should be harmlessly handled by the mock.
-    mock_storage.start_working.assert_called_once_with(proj_name=None)
-    # Reset mock for potential subsequent calls in the same test session
-    mock_storage.start_working.reset_mock()
+    proj_ttrack.PostgreCloudStorage.assert_not_called()
+    mock_storage.start_working.assert_not_called()
 
 
-def test_list_and_install_dont_require_projectname():
-    """
-    --list and --install should proceed without raising the 'missing project name' error,
-    as they are handled before that check in main().
-    """
+def test_list_does_not_require_projectname(mock_storage):
+    """--list uses mocked storage without requiring a project name."""
     run_main_with_args(["--list"])
-    # Passes if no exception (including ExitCalled(1)) is raised.
+    mock_storage.list_projects.assert_called_once()
 
 
 ## 🚀 Start/Stop Logic
@@ -209,7 +189,7 @@ def test_export_task(mock_storage):
 ## 🔨 Installer Task
 
 
-def test_install_task_calls_installer_function():
+def test_install_task_calls_installer_function(mock_storage):
     """Test --install calls install_bats_to_cwd and exits early."""
     # Patch the installer function globally within the proj_ttrack module
     with patch("proj_ttrack.install_bats_to_cwd") as mock_install:
@@ -218,4 +198,4 @@ def test_install_task_calls_installer_function():
         # Installer should be called
         mock_install.assert_called_once()
 
-        # We confirm it bypassed the storage setup because the test didn't raise ExitCalled(1)
+        proj_ttrack.PostgreCloudStorage.assert_not_called()
