@@ -1,6 +1,6 @@
 # tests/test_postgres_cloud_storage.py
 """
-Integration tests against a real Postgres (Supabase) database.
+Integration tests against a dedicated PostgreSQL test database (Neon).
 
 Skips the entire module if required env vars are missing
 or the Postgres driver isn't installed.
@@ -15,11 +15,13 @@ Covers:
 """
 
 from __future__ import annotations
+from collections.abc import Iterator
 from pathlib import Path
 import os
 import pandas as pd
 import pytest
 from sqlalchemy import select, text
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 import re
 
@@ -32,8 +34,8 @@ from dotenv import load_dotenv
 
 load_dotenv()  # load .env into process for the test's env checks
 
-# You have to have a separate project in supaabase for tests!
-# Otherwise the test destroy your database
+# Use a dedicated database with a name ending in _test and a limited test login.
+# These tests delete all project_sessions rows in that database.
 REQUIRED_ENVS = ["TEST_POSTGRES_URL"]
 
 # ensure driver present (prefer psycopg v3)
@@ -57,7 +59,7 @@ if not _driver_ok:
 
 if not all(os.getenv(k) for k in REQUIRED_ENVS):
     pytest.skip(
-        "Postgres env vars missing; set POSTGRES_* to run Postgres tests",
+        "Set TEST_POSTGRES_URL to run PostgreSQL integration tests",
         allow_module_level=True,
     )
 
@@ -66,12 +68,32 @@ if not all(os.getenv(k) for k in REQUIRED_ENVS):
 
 
 @pytest.fixture(scope="module")
-def storage() -> PostgreCloudStorage:
+def storage() -> Iterator[PostgreCloudStorage]:
     """
     One storage for the module. Uses env-based connection
     """
+    test_url = make_url(os.environ["TEST_POSTGRES_URL"])
+    if not test_url.database or not test_url.database.endswith("_test"):
+        pytest.fail("Refusing destructive tests: database name must end in _test", pytrace=False)
+    prod_value = os.getenv("POSTGRES_URL", "").strip()
+    if prod_value:
+        prod_url = make_url(prod_value)
+
+        def target(url):
+            # Neon direct and pooled endpoints can address the same database.
+            host = (url.host or "").lower().replace("-pooler.", ".")
+            return host, url.port or 5432, url.database
+
+        if target(test_url) == target(prod_url):
+            pytest.fail("Refusing destructive tests against the production database", pytrace=False)
     st = PostgreCloudStorage(profile="test", echo=False)
-    return st
+    try:
+        with st.engine.connect() as conn:
+            if conn.execute(text("SELECT current_database()")).scalar_one() != test_url.database:
+                pytest.fail("Connected database does not match the test URL", pytrace=False)
+        yield st
+    finally:
+        st.engine.dispose()
 
 
 @pytest.fixture(autouse=True)

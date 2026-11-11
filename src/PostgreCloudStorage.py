@@ -1,11 +1,11 @@
-"""A Centralized postgre database using supabase"""
+"""Centralized PostgreSQL storage, configured with a connection URL."""
 
 import os
-from dotenv import load_dotenv
 from typing import Literal
 
-from sqlalchemy.exc import SQLAlchemyError
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.pool import NullPool
 
 from SQLiteLocalStorage import Base, SQLiteLocalStorage
@@ -13,7 +13,7 @@ from SQLiteLocalStorage import Base, SQLiteLocalStorage
 
 class PostgreCloudStorage(SQLiteLocalStorage):
     """Has the functionality and storage means for tracking project's time consumption.
-    The data is in supabase cloud storage; as SQLAlchemy takes care of actual database
+    The data is in PostgreSQL cloud storage; as SQLAlchemy takes care of actual database
     interactions, only the initialization process is different - all else is inherited
     from the SQLiteLocalStorage class"""
 
@@ -27,8 +27,8 @@ class PostgreCloudStorage(SQLiteLocalStorage):
         if not db_url:
             raise RuntimeError(
                 f"{env_key} is empty or missing. "
-                f"Set it to your full Supabase URL, e.g. "
-                f"postgresql+psycopg://user:pass@pooler-host:6543/db?sslmode=require"
+                f"Set it to your full PostgreSQL URL, e.g. "
+                f"postgresql+psycopg://user:pass@host/db?sslmode=require"
             )
 
         try:
@@ -36,11 +36,11 @@ class PostgreCloudStorage(SQLiteLocalStorage):
                 db_url,
                 echo=echo,
                 pool_pre_ping=True,  # validates connections before use
-                poolclass=NullPool,  # avoid holding idle connections, suggested by supabase
+                poolclass=NullPool,  # close connections between CLI operations
             )
             Base.metadata.create_all(self.engine)
         except SQLAlchemyError as e:
-            print(f"Could not connect to database {db_url} with SQLAlchemy ({e})")
+            print(f"Could not initialize PostgreSQL storage ({type(e).__name__})")
             raise RuntimeError("Database connection error") from e
         except Exception as e:
             print(f"An unexpected error occurred ({e})")
